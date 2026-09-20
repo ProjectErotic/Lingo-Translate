@@ -638,6 +638,24 @@ func CreateTranslator(cfg ProviderConfig) (translator.Translator, error) {
 		return google.New(google.Config{
 			APIKey: cfg.APIKey,
 		}), nil
+	case "uchs":
+		if cfg.APIKey == "" {
+			return nil, fmt.Errorf("API key is required for UCHS provider (generate one via Chanomhub login)")
+		}
+		baseURL := cfg.BaseURL
+		if baseURL == "" {
+			baseURL = "https://ilms.uchs-th.com/v1"
+		}
+		model := cfg.Model
+		if model == "" {
+			model = "deepseek-v4.1-flash"
+		}
+		return openai.New(openai.Config{
+			APIKey:  cfg.APIKey,
+			BaseURL: baseURL,
+			Model:   model,
+			Timeout: cfg.Timeout,
+		}), nil
 	default:
 		// Attempt to load external custom provider definition (e.g. from ~/.config/nst/providers/*.json or ./providers/*.json)
 		if customDef, err := custom.Find(cfg.Name); err == nil {

@@ -24,6 +24,9 @@ import {
   EyeOff,
   RefreshCw,
   Layers,
+  ExternalLink,
+  Sparkles,
+  Cpu,
 } from "lucide-react";
 import { fetchProviders, BUILTIN_PROVIDERS, type ProviderInfo } from "@/lib/providers";
 
@@ -51,6 +54,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
     openai_base_url: "",
     google_api_key: "",
     chanomhub_token: "",
+    uchs_api_key: "",
     plugin_keys: {},
     plugin_base_urls: {},
     default_source_lang: "Japanese",
@@ -60,6 +64,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
     theme: "dark",
   });
   const [saving, setSaving] = useState(false);
+  const [requestingUchsKey, setRequestingUchsKey] = useState(false);
+  const [openingUchsPortal, setOpeningUchsPortal] = useState(false);
 
   const loadProvidersData = async () => {
     try {
@@ -78,6 +84,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           if (s) {
             setSettings({
               ...s,
+              uchs_api_key: s.uchs_api_key || "",
               plugin_keys: s.plugin_keys || {},
               plugin_base_urls: s.plugin_base_urls || {},
             });
@@ -88,6 +95,69 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
         });
     }
   }, [open]);
+
+  const handleRequestUchsKey = async () => {
+    if (!settings.chanomhub_token) {
+      toast.error("จำเป็นต้องระบุ Chanomhub Token ก่อนเพื่อขอรับ Key จากระบบ");
+      return;
+    }
+    try {
+      setRequestingUchsKey(true);
+      let key = "";
+      try {
+        key = await SettingsService.RequestUchsKey();
+      } catch {
+        const res = await fetch("https://api.chanomhub.com/api/uchs/keys/generate", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${settings.chanomhub_token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+        const data = await res.json();
+        key = data.key;
+      }
+      if (key) {
+        setSettings((prev) => ({ ...prev, uchs_api_key: key }));
+        toast.success("ออก UCHS API Key ผ่าน Chanomhub เรียบร้อยแล้ว!");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "ไม่สามารถขอรับ UCHS Key ได้");
+    } finally {
+      setRequestingUchsKey(false);
+    }
+  };
+
+  const handleOpenUchsPortal = async () => {
+    if (!settings.chanomhub_token) {
+      toast.error("จำเป็นต้องระบุ Chanomhub Token ก่อนเพื่อเข้าสู่ระบบ");
+      return;
+    }
+    try {
+      setOpeningUchsPortal(true);
+      try {
+        await SettingsService.OpenUchsPortal();
+      } catch {
+        const res = await fetch("https://api.chanomhub.com/api/uchs/sso-url", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${settings.chanomhub_token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+        const data = await res.json();
+        if (data.redirectUrl) {
+          window.open(data.redirectUrl, "_blank", "noopener,noreferrer");
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message || "ไม่สามารถเปิด UCHS Portal ได้");
+    } finally {
+      setOpeningUchsPortal(false);
+    }
+  };
 
   const toggleShowKey = (key: string) => {
     setShowKeys((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -449,6 +519,72 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                           onClick={() => toggleShowKey("chanomhub")}
                         >
                           {showKeys["chanomhub"] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* UCHS AI Infrastructure Section */}
+                    <div className="p-3 bg-emerald-950/20 border border-emerald-500/30 rounded-lg space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Cpu className="w-4 h-4 text-emerald-400" />
+                          <label className="block text-xs font-semibold text-emerald-300">
+                            UCHS AI Gateway (LiteLLM Cluster)
+                          </label>
+                        </div>
+                        <span className="text-[10px] text-emerald-400/80 font-mono">
+                          ilms.uchs-th.com
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        เข้าถึงโมเดล DeepSeek V4.1 Flash, DeepSeek Pro และ Translation Engine ด้วย Virtual Key ที่ออกผ่านบัญชี Chanomhub
+                      </p>
+
+                      <div className="flex gap-2">
+                        <Input
+                          type={showKeys["uchs"] ? "text" : "password"}
+                          value={settings.uchs_api_key || ""}
+                          onChange={(e) =>
+                            setSettings({ ...settings, uchs_api_key: e.target.value })
+                          }
+                          placeholder="sk-uchs-..."
+                          className="font-mono text-xs border-emerald-500/30"
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => toggleShowKey("uchs")}
+                        >
+                          {showKeys["uchs"] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </Button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={requestingUchsKey || !settings.chanomhub_token}
+                          onClick={handleRequestUchsKey}
+                          className="text-xs h-7 gap-1 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
+                        >
+                          <Sparkles className="w-3 h-3 text-emerald-400" />
+                          {requestingUchsKey ? "กำลังขอ Key..." : "ขอรับ Key จาก Chanomhub"}
+                        </Button>
+
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          disabled={openingUchsPortal || !settings.chanomhub_token}
+                          onClick={handleOpenUchsPortal}
+                          className="text-xs h-7 gap-1 text-zinc-300 hover:text-white"
+                        >
+                          <ExternalLink className="w-3 h-3 text-emerald-400" />
+                          {openingUchsPortal ? "กำลังเปิด..." : "เปิดหน้าบัญชี UCHS (Portal)"}
                         </Button>
                       </div>
                     </div>

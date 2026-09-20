@@ -25,5 +25,19 @@ export function SaveSettings(settings: $models.Settings): $CancellablePromise<vo
     return $Call.ByID(2662658340, settings);
 }
 
+/**
+ * RequestUchsKey requests a new Virtual Key from Chanomhub
+ */
+export function RequestUchsKey(): $CancellablePromise<string> {
+    return $Call.ByName("main.SettingsService.RequestUchsKey");
+}
+
+/**
+ * OpenUchsPortal opens the UCHS Account Portal in the default web browser via Chanomhub SSO
+ */
+export function OpenUchsPortal(): $CancellablePromise<void> {
+    return $Call.ByName("main.SettingsService.OpenUchsPortal");
+}
+
 // Private type creation functions
 const $$createType0 = $models.Settings.createFrom;

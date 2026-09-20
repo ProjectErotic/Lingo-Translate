@@ -597,3 +597,113 @@ func OpenBrowser(url string) error {
 	}
 	return cmd.Start()
 }
+
+// RequestUchsKey requests a new Virtual Key from Chanomhub for the UCHS AI gateway
+func RequestUchsKey(ctx context.Context, token, apiBase string) (string, error) {
+	if token == "" {
+		token = GetEffectiveToken()
+	}
+	if token == "" {
+		return "", fmt.Errorf("authentication token is required (please log in to Chanomhub first)")
+	}
+	if apiBase == "" {
+		apiBase = GetEffectiveAPIBase()
+	}
+	apiBase = strings.TrimRight(apiBase, "/")
+
+	req, err := http.NewRequestWithContext(ctx, "POST", apiBase+"/api/uchs/keys/generate", bytes.NewReader([]byte("{}")))
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to call Chanomhub UCHS key endpoint: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("server error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var res struct {
+		Key string `json:"key"`
+	}
+	if err := json.Unmarshal(body, &res); err != nil {
+		return "", fmt.Errorf("failed to parse key response: %w", err)
+	}
+
+	if res.Key == "" {
+		return "", fmt.Errorf("server returned empty key")
+	}
+
+	return res.Key, nil
+}
+
+// GetUchsSsoURL retrieves a one-click SSO redirect URL from Chanomhub to open the UCHS portal
+func GetUchsSsoURL(ctx context.Context, token, apiBase string) (string, error) {
+	if token == "" {
+		token = GetEffectiveToken()
+	}
+	if token == "" {
+		return "", fmt.Errorf("authentication token is required (please log in to Chanomhub first)")
+	}
+	if apiBase == "" {
+		apiBase = GetEffectiveAPIBase()
+	}
+	apiBase = strings.TrimRight(apiBase, "/")
+
+	req, err := http.NewRequestWithContext(ctx, "POST", apiBase+"/api/uchs/sso-url", bytes.NewReader([]byte("{}")))
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to call Chanomhub SSO URL endpoint: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("server error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var res struct {
+		RedirectURL string `json:"redirectUrl"`
+	}
+	if err := json.Unmarshal(body, &res); err != nil {
+		return "", fmt.Errorf("failed to parse SSO URL response: %w", err)
+	}
+
+	if res.RedirectURL == "" {
+		return "", fmt.Errorf("server returned empty redirect URL")
+	}
+
+	return res.RedirectURL, nil
+}
+
+// OpenUchsPortal retrieves the SSO URL and opens it in the user's default browser
+func OpenUchsPortal(ctx context.Context, token, apiBase string) error {
+	redirectURL, err := GetUchsSsoURL(ctx, token, apiBase)
+	if err != nil {
+		return err
+	}
+	return OpenBrowser(redirectURL)
+}
+

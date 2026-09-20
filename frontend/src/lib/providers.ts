@@ -33,6 +33,15 @@ export const BUILTIN_PROVIDERS: ProviderInfo[] = [
     available_models: ["gpt-4o-mini", "gpt-4o", "o3-mini"],
   },
   {
+    name: "uchs",
+    display_name: "UCHS AI Infrastructure",
+    description: "High-throughput cluster gateway powered by LiteLLM (DeepSeek V4.1 Flash, DeepSeek Pro)",
+    is_custom: false,
+    base_url: "https://ilms.uchs-th.com/v1",
+    default_model: "deepseek-v4.1-flash",
+    available_models: ["deepseek-v4.1-flash", "deepseek-v4-pro-0813", "deepseek-v4-flash-0731"],
+  },
+  {
     name: "google",
     display_name: "Google Translate API",
     description: "Google Cloud Translation API v2",

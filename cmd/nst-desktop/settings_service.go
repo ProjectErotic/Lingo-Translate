@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"nst-go/pkg/app"
+	"nst-go/pkg/plugins/chanomhub"
 )
 
 type Settings struct {
@@ -17,6 +21,7 @@ type Settings struct {
 	OpenAIBaseURL      string            `json:"openai_base_url"`
 	GoogleAPIKey       string            `json:"google_api_key"`
 	ChanomhubToken     string            `json:"chanomhub_token"`
+	UchsAPIKey         string            `json:"uchs_api_key"`
 	PluginKeys         map[string]string `json:"plugin_keys,omitempty"`      // dynamic map: provider_name -> api_key
 	PluginBaseURLs     map[string]string `json:"plugin_base_urls,omitempty"`  // dynamic map: provider_name -> base_url
 	DefaultSourceLang  string            `json:"default_source_lang"`  // "Japanese"
@@ -111,3 +116,37 @@ func (s *SettingsService) SaveSettings(settings Settings) error {
 
 	return os.WriteFile(s.filePath, data, 0600)
 }
+
+// RequestUchsKey requests a new Virtual Key from Chanomhub and saves it into settings
+func (s *SettingsService) RequestUchsKey() (string, error) {
+	settings, err := s.GetSettings()
+	if err != nil {
+		return "", err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	key, err := chanomhub.RequestUchsKey(ctx, settings.ChanomhubToken, "")
+	if err != nil {
+		return "", err
+	}
+
+	settings.UchsAPIKey = key
+	if err := s.SaveSettings(settings); err != nil {
+		return key, fmt.Errorf("key generated but failed to save settings: %w", err)
+	}
+	return key, nil
+}
+
+// OpenUchsPortal opens the UCHS Account Portal in the default web browser via Chanomhub SSO
+func (s *SettingsService) OpenUchsPortal() error {
+	settings, err := s.GetSettings()
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	return chanomhub.OpenUchsPortal(ctx, settings.ChanomhubToken, "")
+}
+

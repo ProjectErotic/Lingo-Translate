@@ -53,6 +53,7 @@ export class Settings {
     "openai_base_url": string;
     "google_api_key": string;
     "chanomhub_token": string;
+    "uchs_api_key"?: string;
     "plugin_keys"?: Record<string, string>;
     "plugin_base_urls"?: Record<string, string>;
 

@@ -21,6 +21,7 @@ import (
 	"lingo-translate/pkg/storage"
 	"lingo-translate/pkg/translator/prompts"
 	appVersion "lingo-translate/pkg/version"
+	"lingo-translate/pkg/updater"
 	"lingo-translate/pkg/webui"
 
 	"golang.org/x/term"
@@ -104,6 +105,8 @@ func main() {
 		handleApplyPatch(os.Args[2:])
 	case "styles", "templates":
 		handleStyles(os.Args[2:])
+	case "update", "upgrade":
+		handleUpdate(os.Args[2:])
 	case "version", "-v", "--version":
 		fmt.Printf("Lingo CLI %s\n", version)
 	case "help", "-h", "--help":
@@ -141,6 +144,7 @@ Commands:
   export-patch Export translated workspace to ultra-compact distribution patch (.patch.json.gz)
   import-patch Re-hydrate/merge distribution patch into workspace and TM cache (0 API cost)
   apply-patch  Directly install distribution patch onto a game folder without workspace
+  update       Check and update Lingo CLI to the latest release
   mcp          Start the Model Context Protocol (MCP) server over stdio
   version      Show version info
 
@@ -1065,7 +1069,32 @@ func handleStyles(args []string) {
 	fmt.Println("📁 Custom Template Files:")
 	fmt.Println("   Place custom templates in './templates/<name>.txt' or pass a path:")
 	fmt.Println("   Example: lingo translate -workspace game.nst -provider maxplus -style nsfw")
-	fmt.Println("   Example: lingo translate -workspace game.nst -provider maxplus -style ./templates/my_style.txt")
 }
 
+func handleUpdate(args []string) {
+	fs := flag.NewFlagSet("update", flag.ExitOnError)
+	checkOnly := fs.Bool("check", false, "Only check if an update is available without installing")
+	force := fs.Bool("force", false, "Force re-download even if already up to date")
+	_ = fs.Parse(args)
 
+	if *checkOnly {
+		fmt.Println("🔍 Checking for updates...")
+		hasUpdate, currentVer, latestVer, err := updater.CheckUpdate()
+		if err != nil {
+			fmt.Printf("❌ Failed to check for updates: %v\n", err)
+			os.Exit(1)
+		}
+		if hasUpdate {
+			fmt.Printf("📦 An update is available: v%s (current: v%s)\n", latestVer, currentVer)
+			fmt.Println("   Run 'lingo update' to upgrade.")
+		} else {
+			fmt.Printf("✅ Lingo CLI is up to date (v%s)\n", currentVer)
+		}
+		return
+	}
+
+	if err := updater.Update(*force); err != nil {
+		fmt.Printf("❌ Update failed: %v\n", err)
+		os.Exit(1)
+	}
+}

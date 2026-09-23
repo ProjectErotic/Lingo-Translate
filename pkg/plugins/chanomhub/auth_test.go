@@ -286,3 +286,52 @@ func TestLocalCallbackServerWithState(t *testing.T) {
 		t.Errorf("token was not sent to channel")
 	}
 }
+
+func TestRequestUchsKeyAndSso_DataWrapped(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/uchs/keys/generate":
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{
+				"statusCode": 201,
+				"data": {
+					"id": 10,
+					"key": "sk-uchs-test-key-12345",
+					"keyAlias": "chanomhub-user-123",
+					"maxBudget": 5
+				}
+			}`))
+		case "/api/uchs/sso-url":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{
+				"statusCode": 200,
+				"data": {
+					"redirectUrl": "https://uchs-th.com/auth/sso?ticket=ticket123"
+				}
+			}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	ctx := context.Background()
+
+	// 1. Test RequestUchsKey with wrapped response
+	key, err := RequestUchsKey(ctx, "mock_token", server.URL)
+	if err != nil {
+		t.Fatalf("RequestUchsKey failed: %v", err)
+	}
+	if key != "sk-uchs-test-key-12345" {
+		t.Errorf("expected 'sk-uchs-test-key-12345', got '%s'", key)
+	}
+
+	// 2. Test GetUchsSsoURL with wrapped response
+	ssoURL, err := GetUchsSsoURL(ctx, "mock_token", server.URL)
+	if err != nil {
+		t.Fatalf("GetUchsSsoURL failed: %v", err)
+	}
+	if ssoURL != "https://uchs-th.com/auth/sso?ticket=ticket123" {
+		t.Errorf("expected 'https://uchs-th.com/auth/sso?ticket=ticket123', got '%s'", ssoURL)
+	}
+}

@@ -395,6 +395,9 @@ func (c *Client) PublishTranslation(ctx context.Context, req PublishRequest) (*P
 	modID := 0
 	modStatus := "PENDING"
 	if err := json.Unmarshal(submitRespBody, &submitJSON); err == nil {
+		if dataObj, ok := submitJSON["data"].(map[string]interface{}); ok {
+			submitJSON = dataObj
+		}
 		if modObj, ok := submitJSON["mod"].(map[string]interface{}); ok {
 			if id, ok := modObj["id"].(float64); ok {
 				modID = int(id)

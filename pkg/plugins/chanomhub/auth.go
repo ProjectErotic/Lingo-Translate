@@ -313,6 +313,16 @@ func Login(ctx context.Context, req LoginRequest) (*LoginResult, error) {
 			Email    string      `json:"email"`
 			Token    string      `json:"token"`
 		} `json:"user"`
+		Data struct {
+			User struct {
+				ID       interface{} `json:"id"`
+				Name     string      `json:"name"`
+				Username string      `json:"username"`
+				Email    string      `json:"email"`
+				Token    string      `json:"token"`
+			} `json:"user"`
+			RefreshToken string `json:"refreshToken"`
+		} `json:"data"`
 		RefreshToken string `json:"refreshToken"`
 	}
 
@@ -320,7 +330,16 @@ func Login(ctx context.Context, req LoginRequest) (*LoginResult, error) {
 		return nil, fmt.Errorf("failed to parse login response: %w", err)
 	}
 
-	token := strings.TrimSpace(resData.User.Token)
+	userObj := resData.User
+	if userObj.Token == "" && resData.Data.User.Token != "" {
+		userObj = resData.Data.User
+	}
+	refreshToken := resData.RefreshToken
+	if refreshToken == "" {
+		refreshToken = resData.Data.RefreshToken
+	}
+
+	token := strings.TrimSpace(userObj.Token)
 	if token == "" {
 		return nil, fmt.Errorf("server returned empty auth token")
 	}
@@ -330,18 +349,18 @@ func Login(ctx context.Context, req LoginRequest) (*LoginResult, error) {
 		userInfo = &TokenUserInfo{}
 	}
 
-	if resData.User.Name != "" {
-		userInfo.Username = resData.User.Name
-	} else if resData.User.Username != "" {
-		userInfo.Username = resData.User.Username
+	if userObj.Name != "" {
+		userInfo.Username = userObj.Name
+	} else if userObj.Username != "" {
+		userInfo.Username = userObj.Username
 	}
 
-	if resData.User.Email != "" {
-		userInfo.Email = resData.User.Email
+	if userObj.Email != "" {
+		userInfo.Email = userObj.Email
 	}
 
-	if resData.User.ID != nil {
-		userInfo.UserID = fmt.Sprintf("%v", resData.User.ID)
+	if userObj.ID != nil {
+		userInfo.UserID = fmt.Sprintf("%v", userObj.ID)
 	}
 
 	if userInfo.Username == "" && userInfo.Email != "" {
@@ -429,21 +448,36 @@ func fetchCurrentUser(ctx context.Context, client *http.Client, apiBase, token s
 			Username string      `json:"username"`
 			Email    string      `json:"email"`
 		} `json:"user"`
+		Data struct {
+			User struct {
+				ID       interface{} `json:"id"`
+				Name     string      `json:"name"`
+				Username string      `json:"username"`
+				Email    string      `json:"email"`
+			} `json:"user"`
+		} `json:"data"`
 	}
 
 	if err := json.Unmarshal(body, &res); err != nil {
 		return nil, err
 	}
 
+	userObj := res.User
+	if userObj.Email == "" && userObj.Username == "" && userObj.Name == "" {
+		if res.Data.User.Email != "" || res.Data.User.Username != "" || res.Data.User.Name != "" {
+			userObj = res.Data.User
+		}
+	}
+
 	info := &TokenUserInfo{
-		Username: res.User.Username,
-		Email:    res.User.Email,
+		Username: userObj.Username,
+		Email:    userObj.Email,
 	}
 	if info.Username == "" {
-		info.Username = res.User.Name
+		info.Username = userObj.Name
 	}
-	if res.User.ID != nil {
-		info.UserID = fmt.Sprintf("%v", res.User.ID)
+	if userObj.ID != nil {
+		info.UserID = fmt.Sprintf("%v", userObj.ID)
 	}
 	if info.Username == "" && info.Email != "" {
 		info.Username = strings.Split(info.Email, "@")[0]
@@ -642,17 +676,24 @@ func RequestUchsKey(ctx context.Context, token, apiBase string) (string, error) 
 	}
 
 	var res struct {
-		Key string `json:"key"`
+		Key  string `json:"key"`
+		Data struct {
+			Key string `json:"key"`
+		} `json:"data"`
 	}
 	if err := json.Unmarshal(body, &res); err != nil {
 		return "", fmt.Errorf("failed to parse key response: %w", err)
 	}
 
-	if res.Key == "" {
-		return "", fmt.Errorf("server returned empty key")
+	key := res.Key
+	if key == "" {
+		key = res.Data.Key
+	}
+	if key == "" {
+		return "", fmt.Errorf("server returned empty key (response: %s)", string(body))
 	}
 
-	return res.Key, nil
+	return key, nil
 }
 
 // GetUchsSsoURL retrieves a one-click SSO redirect URL from Chanomhub to open the UCHS portal
@@ -693,16 +734,23 @@ func GetUchsSsoURL(ctx context.Context, token, apiBase string) (string, error) {
 
 	var res struct {
 		RedirectURL string `json:"redirectUrl"`
+		Data        struct {
+			RedirectURL string `json:"redirectUrl"`
+		} `json:"data"`
 	}
 	if err := json.Unmarshal(body, &res); err != nil {
 		return "", fmt.Errorf("failed to parse SSO URL response: %w", err)
 	}
 
-	if res.RedirectURL == "" {
-		return "", fmt.Errorf("server returned empty redirect URL")
+	redirectURL := res.RedirectURL
+	if redirectURL == "" {
+		redirectURL = res.Data.RedirectURL
+	}
+	if redirectURL == "" {
+		return "", fmt.Errorf("server returned empty redirect URL (response: %s)", string(body))
 	}
 
-	return res.RedirectURL, nil
+	return redirectURL, nil
 }
 
 // OpenUchsPortal retrieves the SSO URL and opens it in the user's default browser

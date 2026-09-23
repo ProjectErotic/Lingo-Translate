@@ -35,7 +35,7 @@ interface SettingsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type TabType = "providers" | "models" | "keys" | "plugins" | "translation" | "about";
+type TabType = "providers" | "models" | "system_one" | "keys" | "plugins" | "translation" | "about";
 
 export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   open,
@@ -62,6 +62,23 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
     default_batch_size: 10,
     default_concurrency: 4,
     theme: "dark",
+    tasks: {
+      primary_translation: { provider: "gemini", model: "gemini-2.5-flash" },
+      fast_translation: { provider: "google", model: "google-translate" },
+      auto_route_short_text: false,
+      max_short_length: 60,
+    },
+    system_one: {
+      enabled: false,
+      provider: "typesafe_jev",
+      api_key: "",
+      confidence_threshold: 0.85,
+      features: {
+        filter_ambiguous_code: true,
+        accept_ui_drafts: true,
+        verify_qa: false,
+      },
+    },
   });
   const [saving, setSaving] = useState(false);
   const [requestingUchsKey, setRequestingUchsKey] = useState(false);
@@ -87,6 +104,23 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               uchs_api_key: s.uchs_api_key || "",
               plugin_keys: s.plugin_keys || {},
               plugin_base_urls: s.plugin_base_urls || {},
+              tasks: s.tasks || {
+                primary_translation: { provider: s.default_provider || "gemini", model: s.default_model || "gemini-2.5-flash" },
+                fast_translation: { provider: "google", model: "google-translate" },
+                auto_route_short_text: false,
+                max_short_length: 60,
+              },
+              system_one: s.system_one || {
+                enabled: false,
+                provider: "typesafe_jev",
+                api_key: "",
+                confidence_threshold: 0.85,
+                features: {
+                  filter_ambiguous_code: true,
+                  accept_ui_drafts: true,
+                  verify_qa: false,
+                },
+              },
             });
           }
         })
@@ -214,7 +248,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
   const navItems = [
     { id: "providers" as TabType, label: "Providers", icon: Zap },
-    { id: "models" as TabType, label: "Models", icon: Bot },
+    { id: "models" as TabType, label: "Task Routing", icon: Bot },
+    { id: "system_one" as TabType, label: "System One (Jev)", icon: Cpu },
     { id: "keys" as TabType, label: "API Keys", icon: Key },
     {
       id: "plugins" as TabType,
@@ -353,55 +388,430 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               </div>
             )}
 
-            {/* 2. Models Tab */}
+            {/* 2. Task Routing Tab (Hermes-Style Delegation) */}
             {activeTab === "models" && (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground">Model Selection</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-foreground">Task-Based Model Routing</h3>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/20 text-primary">
+                      HERMES ARCHITECTURE
+                    </span>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Configure preferred AI model for {activeProviderInfo?.display_name || settings.default_provider}.
+                    Delegate localization workload to specialized models based on complexity and cost.
                   </p>
                 </div>
 
-                <div className="space-y-3 pt-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                      Default Model String
-                    </label>
-                    <Input
-                      value={settings.default_model}
-                      onChange={(e) =>
-                        setSettings({ ...settings, default_model: e.target.value })
-                      }
-                      placeholder="e.g. gemini-2.5-flash, claude-3-7-sonnet"
-                    />
+                {/* Primary Narrative Role */}
+                <div className="p-3 bg-card/70 border border-border rounded-lg space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-primary" />
+                        Primary Narrative Translation
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        High-context reasoning model for dialogue, character speech, and emotional narrative.
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Dynamic Model Suggestions from Provider/Plugin definition */}
-                  {activeProviderInfo?.available_models && activeProviderInfo.available_models.length > 0 && (
-                    <div className="space-y-2 pt-2">
-                      <label className="block text-xs font-semibold text-muted-foreground">
-                        Available Models from {activeProviderInfo.display_name}:
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                        Provider
                       </label>
-                      <div className="flex flex-wrap gap-2">
-                        {activeProviderInfo.available_models.map((m) => (
-                          // @ui-allow-native
-                          <button
-                            key={m}
-                            type="button"
-                            onClick={() => setSettings({ ...settings, default_model: m })}
-                            className={`px-2.5 py-1 rounded text-xs border transition-colors ${
-                              settings.default_model === m
-                                ? "bg-primary/20 border-primary text-primary font-semibold"
-                                : "bg-card border-border text-foreground hover:border-border/80 hover:bg-muted"
-                            }`}
-                          >
-                            {m}
-                          </button>
+                      <select
+                        value={settings.tasks?.primary_translation?.provider || settings.default_provider}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const found = providers.find((p) => p.name === val);
+                          setSettings({
+                            ...settings,
+                            default_provider: val,
+                            tasks: {
+                              ...settings.tasks!,
+                              primary_translation: {
+                                ...settings.tasks!.primary_translation,
+                                provider: val,
+                                model: found?.default_model || (found?.available_models?.[0] || settings.tasks!.primary_translation.model),
+                              },
+                            },
+                          });
+                        }}
+                        className="w-full h-8 rounded-md border border-input bg-card px-2.5 text-xs text-foreground focus:outline-none focus:border-primary"
+                      >
+                        {providers.map((p) => (
+                          <option key={p.name} value={p.name}>
+                            {p.display_name}
+                          </option>
                         ))}
-                      </div>
+                      </select>
                     </div>
-                  )}
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                        Model String
+                      </label>
+                      <Input
+                        className="h-8 text-xs font-mono"
+                        value={settings.tasks?.primary_translation?.model || settings.default_model}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            default_model: e.target.value,
+                            tasks: {
+                              ...settings.tasks!,
+                              primary_translation: {
+                                ...settings.tasks!.primary_translation,
+                                model: e.target.value,
+                              },
+                            },
+                          })
+                        }
+                        placeholder="e.g. gemini-2.5-pro, claude-3-7-sonnet"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fast / Bulk UI Translation Role */}
+                <div className="p-3 bg-card/70 border border-border rounded-lg space-y-2.5">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-amber-400" />
+                      Fast / Economy Translation
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      High-throughput, cost-effective engine for UI menus, item names, skills, and combat logs.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                        Provider
+                      </label>
+                      <select
+                        value={settings.tasks?.fast_translation?.provider || "google"}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const found = providers.find((p) => p.name === val);
+                          setSettings({
+                            ...settings,
+                            tasks: {
+                              ...settings.tasks!,
+                              fast_translation: {
+                                ...settings.tasks!.fast_translation,
+                                provider: val,
+                                model: found?.default_model || (found?.available_models?.[0] || "google-translate"),
+                              },
+                            },
+                          });
+                        }}
+                        className="w-full h-8 rounded-md border border-input bg-card px-2.5 text-xs text-foreground focus:outline-none focus:border-primary"
+                      >
+                        {providers.map((p) => (
+                          <option key={p.name} value={p.name}>
+                            {p.display_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                        Model String
+                      </label>
+                      <Input
+                        className="h-8 text-xs font-mono"
+                        value={settings.tasks?.fast_translation?.model || "google-translate"}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            tasks: {
+                              ...settings.tasks!,
+                              fast_translation: {
+                                ...settings.tasks!.fast_translation,
+                                model: e.target.value,
+                              },
+                            },
+                          })
+                        }
+                        placeholder="e.g. google-translate, gemini-2.5-flash"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+                    <label className="flex items-center gap-2 cursor-pointer select-none text-muted-foreground hover:text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={settings.tasks?.auto_route_short_text ?? false}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            tasks: {
+                              ...settings.tasks!,
+                              auto_route_short_text: e.target.checked,
+                            },
+                          })
+                        }
+                        className="rounded border-border text-primary focus:ring-primary"
+                      />
+                      <span>Auto-route short texts to Fast Model</span>
+                    </label>
+
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span>Max length:</span>
+                      <Input
+                        type="number"
+                        min={10}
+                        max={300}
+                        className="w-16 h-7 text-xs px-2 py-0 text-center font-mono"
+                        value={settings.tasks?.max_short_length || 60}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            tasks: {
+                              ...settings.tasks!,
+                              max_short_length: parseInt(e.target.value) || 60,
+                            },
+                          })
+                        }
+                      />
+                      <span>chars</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Legacy Fallback Default */}
+                <div className="pt-1 text-xs text-muted-foreground flex items-center justify-between">
+                  <span>Fallback Model: <code className="text-foreground font-mono">{settings.default_model}</code></span>
+                  <span className="text-[11px]">Primary Provider: <code className="text-foreground font-mono">{settings.default_provider}</code></span>
+                </div>
+              </div>
+            )}
+
+            {/* 3. System One (Jev) Tab */}
+            {activeTab === "system_one" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-foreground">System One Decision Engine</h3>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          settings.system_one?.enabled
+                            ? "bg-emerald-950/60 text-emerald-400 border border-emerald-500/30"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {settings.system_one?.enabled ? "ACTIVE (Jev)" : "DISABLED"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Ultra-low latency non-autoregressive decision layer (TypeSafe AI Jev) for code filtering & draft acceptance.
+                    </p>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant={settings.system_one?.enabled ? "default" : "secondary"}
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs"
+                    onClick={() =>
+                      setSettings({
+                        ...settings,
+                        system_one: {
+                          ...settings.system_one!,
+                          enabled: !settings.system_one?.enabled,
+                        },
+                      })
+                    }
+                  >
+                    <Cpu className="w-3.5 h-3.5" />
+                    {settings.system_one?.enabled ? "Enabled" : "Enable Jev"}
+                  </Button>
+                </div>
+
+                <div className="p-3 bg-card/70 border border-border rounded-lg space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                        System One Provider
+                      </label>
+                      <select
+                        disabled={!settings.system_one?.enabled}
+                        value={settings.system_one?.provider || "typesafe_jev"}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            system_one: {
+                              ...settings.system_one!,
+                              provider: e.target.value,
+                            },
+                          })
+                        }
+                        className="w-full h-8 rounded-md border border-input bg-card px-2.5 text-xs text-foreground focus:outline-none focus:border-primary disabled:opacity-50"
+                      >
+                        <option value="typesafe_jev">TypeSafe AI (Jev Decision Engine)</option>
+                        <option value="heuristic">Built-in Deterministic Heuristic</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                        Confidence Threshold
+                      </label>
+                      <Input
+                        type="number"
+                        step="0.05"
+                        min="0.5"
+                        max="1.0"
+                        disabled={!settings.system_one?.enabled}
+                        value={settings.system_one?.confidence_threshold || 0.85}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            system_one: {
+                              ...settings.system_one!,
+                              confidence_threshold: parseFloat(e.target.value) || 0.85,
+                            },
+                          })
+                        }
+                        className="h-8 text-xs font-mono disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                      TypeSafe AI API Key
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        type={showKeys["jev"] ? "text" : "password"}
+                        disabled={!settings.system_one?.enabled}
+                        value={settings.system_one?.api_key || ""}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            system_one: {
+                              ...settings.system_one!,
+                              api_key: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="ts_live_..."
+                        className="h-8 text-xs font-mono disabled:opacity-50"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        disabled={!settings.system_one?.enabled}
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => toggleShowKey("jev")}
+                      >
+                        {showKeys["jev"] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delegations / Capabilities */}
+                <div className="p-3 bg-card/70 border border-border rounded-lg space-y-2.5">
+                  <div className="text-xs font-semibold text-foreground">
+                    Active Decision Delegations
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Select which tasks should be routed to System One instead of using traditional heuristics or expensive frontier LLMs:
+                  </p>
+
+                  <div className="space-y-2 pt-1 text-xs">
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        disabled={!settings.system_one?.enabled}
+                        checked={settings.system_one?.features?.filter_ambiguous_code ?? true}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            system_one: {
+                              ...settings.system_one!,
+                              features: {
+                                ...settings.system_one!.features,
+                                filter_ambiguous_code: e.target.checked,
+                              },
+                            },
+                          })
+                        }
+                        className="mt-0.5 rounded border-border text-primary focus:ring-primary disabled:opacity-50"
+                      />
+                      <div>
+                        <span className="font-medium text-foreground">Ambiguous Code Gatekeeper</span>
+                        <p className="text-[11px] text-muted-foreground">
+                          Call Jev only when heuristic regex is uncertain about engine scripts vs player-facing text.
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        disabled={!settings.system_one?.enabled}
+                        checked={settings.system_one?.features?.accept_ui_drafts ?? true}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            system_one: {
+                              ...settings.system_one!,
+                              features: {
+                                ...settings.system_one!.features,
+                                accept_ui_drafts: e.target.checked,
+                              },
+                            },
+                          })
+                        }
+                        className="mt-0.5 rounded border-border text-primary focus:ring-primary disabled:opacity-50"
+                      />
+                      <div>
+                        <span className="font-medium text-foreground">Speculative Draft Acceptor (Cost Saver)</span>
+                        <p className="text-[11px] text-muted-foreground">
+                          Instantly approve fluent MT drafts for short UI & menu strings without calling Frontier LLMs.
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        disabled={!settings.system_one?.enabled}
+                        checked={settings.system_one?.features?.verify_qa ?? false}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            system_one: {
+                              ...settings.system_one!,
+                              features: {
+                                ...settings.system_one!.features,
+                                verify_qa: e.target.checked,
+                              },
+                            },
+                          })
+                        }
+                        className="mt-0.5 rounded border-border text-primary focus:ring-primary disabled:opacity-50"
+                      />
+                      <div>
+                        <span className="font-medium text-foreground">Automated QA & Refusal Sentinel</span>
+                        <p className="text-[11px] text-muted-foreground">
+                          Score translation quality and auto-flag safety refusals or hallucinations before database commit.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
             )}
@@ -585,6 +995,50 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                         >
                           <ExternalLink className="w-3 h-3 text-emerald-400" />
                           {openingUchsPortal ? "กำลังเปิด..." : "เปิดหน้าบัญชี UCHS (Portal)"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* TypeSafe AI (Jev) Section */}
+                    <div className="p-3 bg-card border border-border rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Cpu className="w-4 h-4 text-primary" />
+                          <label className="block text-xs font-semibold text-foreground">
+                            TypeSafe AI API Key (System One - Jev)
+                          </label>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          typesafe.ai
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        Used for fast non-autoregressive decision tasks (ambiguous code filtering and speculative draft acceptance).
+                      </p>
+                      <div className="flex gap-2">
+                        <Input
+                          type={showKeys["jev"] ? "text" : "password"}
+                          value={settings.system_one?.api_key || ""}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              system_one: {
+                                ...settings.system_one!,
+                                api_key: e.target.value,
+                              },
+                            })
+                          }
+                          placeholder="ts_live_..."
+                          className="font-mono text-xs"
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => toggleShowKey("jev")}
+                        >
+                          {showKeys["jev"] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </Button>
                       </div>
                     </div>

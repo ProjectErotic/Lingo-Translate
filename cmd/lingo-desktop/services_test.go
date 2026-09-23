@@ -31,9 +31,25 @@ func TestDesktopServices(t *testing.T) {
 	if settings.DefaultProvider != "mock" {
 		t.Errorf("Expected default provider 'mock', got %s", settings.DefaultProvider)
 	}
+	if settings.Tasks.PrimaryTranslation.Model == "" {
+		t.Errorf("Expected default Tasks.PrimaryTranslation.Model to be populated")
+	}
+	if settings.SystemOne.ConfidenceThreshold != 0.85 {
+		t.Errorf("Expected default SystemOne.ConfidenceThreshold 0.85, got %f", settings.SystemOne.ConfidenceThreshold)
+	}
 
 	settings.DefaultModel = "gpt-4o-custom"
 	settings.GeminiAPIKey = "test-api-key-123"
+	settings.Tasks.PrimaryTranslation = TaskBinding{
+		Provider: "openai",
+		Model:    "gpt-4o",
+	}
+	settings.Tasks.AutoRouteShortText = true
+	settings.Tasks.MaxShortLength = 45
+	settings.SystemOne.Enabled = true
+	settings.SystemOne.APIKey = "ts_live_mock_key_999"
+	settings.SystemOne.Features.FilterAmbiguousCode = true
+	settings.SystemOne.Features.AcceptUIDrafts = true
 	if err := settingsSvc.SaveSettings(settings); err != nil {
 		t.Fatalf("SaveSettings failed: %v", err)
 	}
@@ -44,6 +60,15 @@ func TestDesktopServices(t *testing.T) {
 	}
 	if savedSettings.GeminiAPIKey != "test-api-key-123" {
 		t.Errorf("Expected saved API key 'test-api-key-123', got '%s'", savedSettings.GeminiAPIKey)
+	}
+	if savedSettings.Tasks.PrimaryTranslation.Model != "gpt-4o" {
+		t.Errorf("Expected Tasks.PrimaryTranslation.Model 'gpt-4o', got '%s'", savedSettings.Tasks.PrimaryTranslation.Model)
+	}
+	if !savedSettings.Tasks.AutoRouteShortText || savedSettings.Tasks.MaxShortLength != 45 {
+		t.Errorf("Tasks.AutoRouteShortText or MaxShortLength not persisted properly")
+	}
+	if !savedSettings.SystemOne.Enabled || savedSettings.SystemOne.APIKey != "ts_live_mock_key_999" {
+		t.Errorf("SystemOne settings not persisted properly")
 	}
 
 	// 2. Test DetectEngine

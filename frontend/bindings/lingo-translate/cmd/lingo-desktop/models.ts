@@ -38,6 +38,68 @@ export class QueryResult {
     }
 }
 
+export class TaskBinding {
+    "provider": string;
+    "model": string;
+    "temperature"?: number;
+    "max_tokens"?: number;
+
+    constructor($$source: Partial<TaskBinding> = {}) {
+        this["provider"] = $$source["provider"] || "";
+        this["model"] = $$source["model"] || "";
+        if ("temperature" in $$source) this["temperature"] = $$source["temperature"];
+        if ("max_tokens" in $$source) this["max_tokens"] = $$source["max_tokens"];
+        Object.assign(this, $$source);
+    }
+}
+
+export class SystemOneFeatures {
+    "filter_ambiguous_code": boolean;
+    "accept_ui_drafts": boolean;
+    "verify_qa": boolean;
+
+    constructor($$source: Partial<SystemOneFeatures> = {}) {
+        this["filter_ambiguous_code"] = $$source["filter_ambiguous_code"] ?? true;
+        this["accept_ui_drafts"] = $$source["accept_ui_drafts"] ?? true;
+        this["verify_qa"] = $$source["verify_qa"] ?? false;
+        Object.assign(this, $$source);
+    }
+}
+
+export class SystemOneConfig {
+    "enabled": boolean;
+    "provider": string;
+    "api_key": string;
+    "base_url"?: string;
+    "confidence_threshold": number;
+    "features": SystemOneFeatures;
+
+    constructor($$source: Partial<SystemOneConfig> = {}) {
+        this["enabled"] = $$source["enabled"] ?? false;
+        this["provider"] = $$source["provider"] || "typesafe_jev";
+        this["api_key"] = $$source["api_key"] || "";
+        if ("base_url" in $$source) this["base_url"] = $$source["base_url"];
+        this["confidence_threshold"] = $$source["confidence_threshold"] ?? 0.85;
+        this["features"] = new SystemOneFeatures($$source["features"] || {});
+        Object.assign(this, $$source);
+    }
+}
+
+export class TasksConfig {
+    "primary_translation": TaskBinding;
+    "fast_translation": TaskBinding;
+    "auto_route_short_text": boolean;
+    "max_short_length": number;
+
+    constructor($$source: Partial<TasksConfig> = {}) {
+        this["primary_translation"] = new TaskBinding($$source["primary_translation"] || {});
+        this["fast_translation"] = new TaskBinding($$source["fast_translation"] || {});
+        this["auto_route_short_text"] = $$source["auto_route_short_text"] ?? false;
+        this["max_short_length"] = $$source["max_short_length"] ?? 60;
+        Object.assign(this, $$source);
+    }
+}
+
 export class Settings {
     /**
      * "mock", "gemini", "openai", "google"
@@ -81,6 +143,10 @@ export class Settings {
      * "dark"
      */
     "theme": string;
+
+    /** Task-Based AI Routing & System One Auxiliary */
+    "tasks"?: TasksConfig;
+    "system_one"?: SystemOneConfig;
 
     /** Creates a new Settings instance. */
     constructor($$source: Partial<Settings> = {}) {

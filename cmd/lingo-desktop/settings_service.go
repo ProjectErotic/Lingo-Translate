@@ -13,6 +13,39 @@ import (
 	"lingo-translate/pkg/plugins/chanomhub"
 )
 
+// TaskBinding specifies model and options for a specific translation role
+type TaskBinding struct {
+	Provider    string  `json:"provider"`              // "gemini", "openai", "google", "mock", or plugin name
+	Model       string  `json:"model"`                 // e.g. "gemini-2.5-pro", "gpt-4o", etc.
+	Temperature float64 `json:"temperature,omitempty"` // optional sampling temperature
+	MaxTokens   int     `json:"max_tokens,omitempty"`  // optional token limit
+}
+
+// SystemOneFeatures defines which decision delegations are enabled
+type SystemOneFeatures struct {
+	FilterAmbiguousCode bool `json:"filter_ambiguous_code"` // Filter code vs text in gray-zone (Noul)
+	AcceptUIDrafts      bool `json:"accept_ui_drafts"`       // Speculatively accept MT UI drafts without LLM (Noul)
+	VerifyQA            bool `json:"verify_qa"`              // Quality & refusal/hallucination sentinel (Score/Noul)
+}
+
+// SystemOneConfig specifies the auxiliary non-autoregressive decision engine (e.g. TypeSafe AI Jev)
+type SystemOneConfig struct {
+	Enabled             bool              `json:"enabled"`              // Auxiliary toggle (ON/OFF)
+	Provider            string            `json:"provider"`             // "typesafe_jev", "heuristic"
+	APIKey              string            `json:"api_key"`              // TypeSafe AI API Key
+	BaseURL             string            `json:"base_url,omitempty"`   // Endpoint override (e.g. https://api.typesafe.ai/v1)
+	ConfidenceThreshold float64           `json:"confidence_threshold"` // Minimum confidence score (e.g. 0.85)
+	Features            SystemOneFeatures `json:"features"`             // Fine-grained delegation toggles
+}
+
+// TasksConfig manages Hermes-style task routing across different models
+type TasksConfig struct {
+	PrimaryTranslation TaskBinding `json:"primary_translation"`   // Narrative / Complex dialogue
+	FastTranslation    TaskBinding `json:"fast_translation"`      // UI, items, skills, bulk short text
+	AutoRouteShortText bool        `json:"auto_route_short_text"` // Route lines shorter than MaxShortLength to FastTranslation
+	MaxShortLength     int         `json:"max_short_length"`       // Character length threshold (default: 60)
+}
+
 type Settings struct {
 	DefaultProvider    string            `json:"default_provider"`     // "mock", "gemini", "openai", "google", or any custom plugin name
 	DefaultModel       string            `json:"default_model"`        // e.g. "gemini-2.5-flash", "gpt-4o-mini", etc.
@@ -29,6 +62,10 @@ type Settings struct {
 	DefaultBatchSize   int               `json:"default_batch_size"`   // 10
 	DefaultConcurrency int               `json:"default_concurrency"`  // 4
 	Theme              string            `json:"theme"`                // "dark"
+
+	// Task-Based AI Routing & Auxiliary System One (Hermes-Style Architecture)
+	Tasks     TasksConfig     `json:"tasks"`
+	SystemOne SystemOneConfig `json:"system_one"`
 }
 
 type SettingsService struct {
@@ -60,6 +97,28 @@ func defaultSettings() Settings {
 		DefaultBatchSize:   10,
 		DefaultConcurrency: 4,
 		Theme:              "dark",
+		Tasks: TasksConfig{
+			PrimaryTranslation: TaskBinding{
+				Provider: "gemini",
+				Model:    "gemini-2.5-flash",
+			},
+			FastTranslation: TaskBinding{
+				Provider: "google",
+				Model:    "google-translate",
+			},
+			AutoRouteShortText: false,
+			MaxShortLength:     60,
+		},
+		SystemOne: SystemOneConfig{
+			Enabled:             false,
+			Provider:            "typesafe_jev",
+			ConfidenceThreshold: 0.85,
+			Features: SystemOneFeatures{
+				FilterAmbiguousCode: true,
+				AcceptUIDrafts:      true,
+				VerifyQA:            false,
+			},
+		},
 	}
 
 	if envKey := os.Getenv("LINGO_API_KEY"); envKey != "" {
@@ -73,6 +132,11 @@ func defaultSettings() Settings {
 	}
 	if envToken := os.Getenv("CHANOMHUB_TOKEN"); envToken != "" {
 		s.ChanomhubToken = envToken
+	}
+	if jevKey := os.Getenv("TYPESAFE_API_KEY"); jevKey != "" {
+		s.SystemOne.APIKey = jevKey
+	} else if jevKey := os.Getenv("JEV_API_KEY"); jevKey != "" {
+		s.SystemOne.APIKey = jevKey
 	}
 	return s
 }
@@ -93,6 +157,25 @@ func (s *SettingsService) GetSettings() (Settings, error) {
 	settings := defaultSettings()
 	if err := json.Unmarshal(data, &settings); err != nil {
 		return defaultSettings(), err
+	}
+
+	// Ensure fallback for legacy settings
+	if settings.Tasks.PrimaryTranslation.Provider == "" {
+		settings.Tasks.PrimaryTranslation.Provider = settings.DefaultProvider
+		settings.Tasks.PrimaryTranslation.Model = settings.DefaultModel
+	}
+	if settings.Tasks.FastTranslation.Provider == "" {
+		settings.Tasks.FastTranslation.Provider = "google"
+		settings.Tasks.FastTranslation.Model = "google-translate"
+	}
+	if settings.Tasks.MaxShortLength <= 0 {
+		settings.Tasks.MaxShortLength = 60
+	}
+	if settings.SystemOne.Provider == "" {
+		settings.SystemOne.Provider = "typesafe_jev"
+	}
+	if settings.SystemOne.ConfidenceThreshold <= 0 {
+		settings.SystemOne.ConfidenceThreshold = 0.85
 	}
 
 	return settings, nil

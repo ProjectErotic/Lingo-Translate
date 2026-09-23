@@ -47,6 +47,32 @@ func (t *TranslationService) Start(opts app.TranslateOptions) error {
 		return err
 	}
 
+	// Enrich options with Tasks and SystemOne from Settings if not explicitly overridden
+	if opts.FastProvider == nil || opts.SystemOne == nil {
+		if s, sErr := NewSettingsService().GetSettings(); sErr == nil {
+			if opts.FastProvider == nil && s.Tasks.FastTranslation.Provider != "" {
+				opts.FastProvider = &app.ProviderConfig{
+					Name:  s.Tasks.FastTranslation.Provider,
+					Model: s.Tasks.FastTranslation.Model,
+				}
+				opts.AutoRouteShort = s.Tasks.AutoRouteShortText
+				opts.MaxShortLen = s.Tasks.MaxShortLength
+			}
+			if opts.SystemOne == nil && s.SystemOne.Enabled {
+				opts.SystemOne = &app.SystemOneOptions{
+					Enabled:             s.SystemOne.Enabled,
+					Provider:            s.SystemOne.Provider,
+					APIKey:              s.SystemOne.APIKey,
+					BaseURL:             s.SystemOne.BaseURL,
+					ConfidenceThreshold: s.SystemOne.ConfidenceThreshold,
+					FilterAmbiguousCode: s.SystemOne.Features.FilterAmbiguousCode,
+					AcceptUIDrafts:      s.SystemOne.Features.AcceptUIDrafts,
+					VerifyQA:            s.SystemOne.Features.VerifyQA,
+				}
+			}
+		}
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancelFunc = cancel
 	t.isTranslating = true

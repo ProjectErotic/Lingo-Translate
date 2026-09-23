@@ -9,6 +9,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"lingo-translate/frontend"
+	"lingo-translate/pkg/app"
 	"lingo-translate/pkg/model"
 )
 
@@ -52,8 +53,11 @@ func main() {
 			if fi, err := os.Stat(targetPath); err == nil {
 				if fi.IsDir() {
 					wsPath := filepath.Join(targetPath, "workspace.nst")
+					resolvedWs := app.ResolveWorkspacePath("", targetPath)
 					if _, err := os.Stat(wsPath); err == nil {
 						_, _ = projectService.OpenWorkspace(wsPath)
+					} else if _, err := os.Stat(resolvedWs); err == nil {
+						_, _ = projectService.OpenWorkspace(resolvedWs)
 					} else {
 						var engines []string
 						if engine != "" {

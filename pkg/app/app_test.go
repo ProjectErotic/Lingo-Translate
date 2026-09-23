@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"nst-go/pkg/model"
-	"nst-go/pkg/storage"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/storage"
 )
 
 func TestAppWorkflow(t *testing.T) {
@@ -211,7 +211,7 @@ func TestWorkspaceDeployLayerRenpy(t *testing.T) {
 	}
 
 	// Verify font script written
-	fontScript := filepath.Join(gameDir, "game", "tl", "Thai", "00_nst_font_layer.rpy")
+	fontScript := filepath.Join(gameDir, "game", "tl", "Thai", "00_lingo_font_layer.rpy")
 	if _, err := os.Stat(fontScript); err != nil {
 		t.Errorf("Expected font script at %s", fontScript)
 	}

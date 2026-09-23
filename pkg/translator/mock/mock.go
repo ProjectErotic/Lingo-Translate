@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nst-go/pkg/translator"
+	"lingo-translate/pkg/translator"
 )
 
 type MockTranslator struct {

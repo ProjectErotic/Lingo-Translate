@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
 func TestStorageWorkflow(t *testing.T) {

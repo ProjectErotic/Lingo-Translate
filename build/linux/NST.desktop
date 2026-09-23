@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=NST Ghost
-Comment=Novelty Translation Tool
-Exec=sh -c 'cd "$(dirname "$1")" && ./nst-desktop' dummy %k
-Icon=./icon.png
-Terminal=false
-Categories=Utility;Development;

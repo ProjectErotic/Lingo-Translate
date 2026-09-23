@@ -161,7 +161,7 @@ body {
 }
 
 /* Token highlights in text */
-.nst-token {
+.lingo-token {
   display: inline-block;
   padding: 0 4px;
   margin: 0 1px;
@@ -174,7 +174,7 @@ body {
   border: 1px solid rgba(51, 153, 255, 0.3);
 }
 
-.nst-escape {
+.lingo-escape {
   display: inline-block;
   padding: 0 4px;
   margin: 0 1px;

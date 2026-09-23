@@ -3,7 +3,7 @@ package merger
 import (
 	"testing"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
 func TestMergeEntries(t *testing.T) {

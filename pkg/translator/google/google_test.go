@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nst-go/pkg/translator"
+	"lingo-translate/pkg/translator"
 )
 
 func TestGoogleTranslate(t *testing.T) {

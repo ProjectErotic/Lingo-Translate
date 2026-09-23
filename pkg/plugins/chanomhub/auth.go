@@ -45,7 +45,7 @@ func DefaultConfigPath() string {
 	if err != nil {
 		cfgDir = "."
 	}
-	return filepath.Join(cfgDir, "nst", "chanomhub.json")
+	return filepath.Join(cfgDir, "lingo", "chanomhub.json")
 }
 
 // LoadConfig reads the persisted Chanomhub configuration
@@ -114,16 +114,21 @@ func ClearConfig() error {
 	return nil
 }
 
-// syncTokenToDesktopSettings updates chanomhub_token in ~/.config/nst/settings.json
+// syncTokenToDesktopSettings updates chanomhub_token in ~/.config/lingo/settings.json
 func syncTokenToDesktopSettings(token string) {
 	cfgDir, err := os.UserConfigDir()
 	if err != nil {
 		return
 	}
-	settingsPath := filepath.Join(cfgDir, "nst", "settings.json")
+	settingsPath := filepath.Join(cfgDir, "lingo", "settings.json")
 	data, err := os.ReadFile(settingsPath)
 	if err != nil {
-		return
+		// Fallback to legacy nst directory
+		settingsPath = filepath.Join(cfgDir, "nst", "settings.json")
+		data, err = os.ReadFile(settingsPath)
+		if err != nil {
+			return
+		}
 	}
 
 	var settings map[string]interface{}
@@ -151,13 +156,15 @@ func GetEffectiveToken() string {
 	// Fallback to checking settings.json
 	cfgDir, err := os.UserConfigDir()
 	if err == nil {
-		settingsPath := filepath.Join(cfgDir, "nst", "settings.json")
-		if data, err := os.ReadFile(settingsPath); err == nil {
-			var s struct {
-				ChanomhubToken string `json:"chanomhub_token"`
-			}
-			if err := json.Unmarshal(data, &s); err == nil && s.ChanomhubToken != "" {
-				return strings.TrimPrefix(strings.TrimSpace(s.ChanomhubToken), "Bearer ")
+		for _, dir := range []string{"lingo", "nst"} {
+			settingsPath := filepath.Join(cfgDir, dir, "settings.json")
+			if data, err := os.ReadFile(settingsPath); err == nil {
+				var s struct {
+					ChanomhubToken string `json:"chanomhub_token"`
+				}
+				if err := json.Unmarshal(data, &s); err == nil && s.ChanomhubToken != "" {
+					return strings.TrimPrefix(strings.TrimSpace(s.ChanomhubToken), "Bearer ")
+				}
 			}
 		}
 	}

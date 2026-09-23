@@ -12,7 +12,7 @@ import {
 import {
   DeployService,
   ProjectService,
-} from "@bindings/nst-go/cmd/nst-desktop";
+} from "@bindings/lingo-translate/cmd/lingo-desktop";
 import { toast } from "sonner";
 import { Rocket, FolderOpen, Loader2 } from "lucide-react";
 
@@ -114,7 +114,7 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
                 </Badge>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Zero file overwrite. Installs <code className="text-primary font-mono">NST_TranslationLayer.js</code> and loads translations on the fly.
+                Zero file overwrite. Installs <code className="text-primary font-mono">Lingo_TranslationLayer.js</code> and loads translations on the fly.
               </p>
             </div>
 

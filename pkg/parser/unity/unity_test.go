@@ -124,7 +124,7 @@ quest1,"The ancient dungeon lies to the north.","Quest instruction"
 	}
 
 	// Verify XUnity translation file
-	xunityFile := filepath.Join(outDir, "Translation", "th", "Text", "nst_translations.txt")
+	xunityFile := filepath.Join(outDir, "Translation", "th", "Text", "lingo_translations.txt")
 	xunityBytes, err := os.ReadFile(xunityFile)
 	if err != nil {
 		t.Fatalf("failed to read XUnity translation file: %v", err)

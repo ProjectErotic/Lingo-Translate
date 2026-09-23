@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
 var (
@@ -374,7 +374,7 @@ func (p *Parser) extractXUnityText(path, relPath string, entries *[]model.TextEn
 }
 
 // Inject writes translations into output directory:
-// 1. Emits standard XUnity.AutoTranslator translation file (`Translation/th/Text/nst_translations.txt`)
+// 1. Emits standard XUnity.AutoTranslator translation file (`Translation/th/Text/lingo_translations.txt`)
 // 2. Also patches JSON/CSV/YAML files if they exist in source directory
 func (p *Parser) Inject(ctx context.Context, sourceDir, outputDir string, entries []model.TextEntry) error {
 	if len(entries) == 0 {
@@ -387,7 +387,7 @@ func (p *Parser) Inject(ctx context.Context, sourceDir, outputDir string, entrie
 		return fmt.Errorf("failed to create XUnity output dir: %w", err)
 	}
 
-	xunityFile := filepath.Join(xunityDir, "nst_translations.txt")
+	xunityFile := filepath.Join(xunityDir, "lingo_translations.txt")
 	f, err := os.Create(xunityFile)
 	if err != nil {
 		return fmt.Errorf("failed to create xunity translation file: %w", err)

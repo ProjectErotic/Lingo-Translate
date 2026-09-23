@@ -8,10 +8,10 @@ import { Create as $Create } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as main$0 from "../../../../../nst-go/cmd/nst-desktop/models.js";
+import * as main$0 from "../../../../../lingo-translate/cmd/lingo-desktop/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as model$0 from "../../../../../nst-go/pkg/model/models.js";
+import * as model$0 from "../../../../../lingo-translate/pkg/model/models.js";
 
 function configure() {
     Object.freeze(Object.assign($Create.Events, {

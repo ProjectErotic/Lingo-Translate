@@ -17,7 +17,7 @@ import (
 	"time"
 	"unicode"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
 var (

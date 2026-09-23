@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { EditorPage } from "../pages/EditorPage";
-import { TranslationStatus } from "@bindings/nst-go/pkg/model";
+import { TranslationStatus } from "@bindings/lingo-translate/pkg/model";
 
 // Mock @wailsio/runtime
 vi.mock("sonner", () => ({
@@ -39,7 +39,7 @@ const mockEntries = [
   },
 ];
 
-vi.mock("@bindings/nst-go/cmd/nst-desktop", () => ({
+vi.mock("@bindings/lingo-translate/cmd/lingo-desktop", () => ({
   EntryService: {
     Files: vi.fn(async () => mockFiles),
     Query: vi.fn(async (_q) => ({
@@ -115,7 +115,7 @@ describe("EditorPage Grid & Editing Behavior", () => {
   });
 
   it("commits edit on blur and calls EntryService.Update", async () => {
-    const { EntryService } = await import("@bindings/nst-go/cmd/nst-desktop");
+    const { EntryService } = await import("@bindings/lingo-translate/cmd/lingo-desktop");
     render(<EditorPage {...defaultProps} />);
 
     await waitFor(() => {
@@ -138,7 +138,7 @@ describe("EditorPage Grid & Editing Behavior", () => {
   });
 
   it("reverts edit on Escape without calling EntryService.Update", async () => {
-    const { EntryService } = await import("@bindings/nst-go/cmd/nst-desktop");
+    const { EntryService } = await import("@bindings/lingo-translate/cmd/lingo-desktop");
     render(<EditorPage {...defaultProps} />);
 
     await waitFor(() => {

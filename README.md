@@ -1,9 +1,9 @@
-# NST-V2 (Novelty Translation Tool - Go Edition)
+# Lingo-Translate (Game Translation Suite - Go Edition)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/NST-Ghost/NST-V2)](https://goreportcard.com/report/github.com/NST-Ghost/NST-V2)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ProjectErotic/Lingo-Translate)](https://goreportcard.com/report/github.com/ProjectErotic/Lingo-Translate)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**NST-V2** is a next-generation game translation suite redesigned from the ground up in **Pure Go** (`CGO_ENABLED=0`) and modern web technologies. It is engineered for lightning-fast performance, zero-dependency distribution, and automated translation workflows for visual novels and RPG games.
+**Lingo-Translate** is a next-generation game translation suite redesigned from the ground up in **Pure Go** (`CGO_ENABLED=0`) and modern web technologies. It is engineered for lightning-fast performance, zero-dependency distribution, and automated translation workflows for visual novels and RPG games.
 
 ---
 
@@ -16,11 +16,11 @@
   - **Godot:** `.tscn` scene files, GDScript `tr()` calls, and `.csv` translation catalogs.
   - **Unity:** YAML scene `.asset` / `.prefab`, StreamingAssets JSON/CSV, and XUnity.AutoTranslator export.
   - **libGDX:** Java `.properties` bundles, narrative script JSONs (e.g. *Tales of Androgyny* encounters/trees), non-destructive `translations/` modding export, and standalone JAR patching.
-- **Non-Destructive In-Game Injection:** Deploy translations into RPG Maker games via `NST_TranslationLayer.js` without touching original game data files.
+- **Non-Destructive In-Game Injection:** Deploy translations into RPG Maker games via `Lingo_TranslationLayer.js` without touching original game data files.
 - **Tag Masking & Protection:** Intelligent masking ensures engine escape codes (such as `\c[1]`, `\v[n]`, `\fs[20]`) remain intact across translation providers with fuzzy restoration.
 - **Translation Memory (TM Cache):** Embedded SQLite workspace (`.nst`) prevents duplicate API calls and maintains translation consistency across project revisions.
 - **Multiple Translation Providers:** Built-in drivers for Google Gemini, OpenAI, Ollama / Local LLMs, and Google Translate.
-- **Model Context Protocol (MCP) Server:** Native stdio MCP server (`nst mcp`) allowing AI coding agents (Claude Desktop, Cursor, Antigravity) to directly inspect, extract, and translate game projects.
+- **Model Context Protocol (MCP) Server:** Native stdio MCP server (`lingo mcp`) allowing AI coding agents (Claude Desktop, Cursor, Antigravity) to directly inspect, extract, and translate game projects.
 - **Modern Desktop GUI:** Built with Wails v3 + React 19 + Vite + TypeScript + Tailwind CSS + shadcn/ui.
 
 ---
@@ -33,31 +33,31 @@
 # Build standalone CLI binary
 make build
 
-# Output binary will be located at bin/nst
-./bin/nst version
+# Output binary will be located at bin/lingo
+./bin/lingo version
 ```
 
 ### 2. Basic Commands
 
 ```bash
 # Extract game text into an NST workspace
-./bin/nst extract --game /path/to/game --output workspace.nst
+./bin/lingo extract --game /path/to/game --output workspace.nst
 
 # View project statistics
-./bin/nst status --workspace workspace.nst
+./bin/lingo status --workspace workspace.nst
 
 # Translate entries using Gemini
 export GEMINI_API_KEY="your-api-key"
-./bin/nst translate --workspace workspace.nst --provider gemini --source ja --target th
+./bin/lingo translate --workspace workspace.nst --provider gemini --source ja --target th
 
 # Inject translations directly back into game files
-./bin/nst inject --workspace workspace.nst --game /path/to/game --dest /path/to/game_translated
+./bin/lingo inject --workspace workspace.nst --game /path/to/game --dest /path/to/game_translated
 
 # Or deploy non-destructively (RPG Maker MV/MZ)
-./bin/nst deploy --workspace workspace.nst --game /path/to/game
+./bin/lingo deploy --workspace workspace.nst --game /path/to/game
 
 # Run MCP Server for AI Agent interaction
-./bin/nst mcp
+./bin/lingo mcp
 ```
 
 ---
@@ -97,7 +97,7 @@ This repository features automated GitHub Actions workflows:
 
 ## Desktop GUI (Wails v3)
 
-The modern desktop interface is located in `cmd/nst-desktop/` with frontend sources in `frontend/`.
+The modern desktop interface is located in `cmd/lingo-desktop/` with frontend sources in `frontend/`.
 
 ```bash
 # Development mode

@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"nst-go/pkg/model"
-	"nst-go/pkg/storage"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/storage"
 )
 
 type QueryResult struct {

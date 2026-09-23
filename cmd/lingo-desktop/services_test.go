@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"nst-go/pkg/app"
-	"nst-go/pkg/storage"
+	"lingo-translate/pkg/app"
+	"lingo-translate/pkg/storage"
 )
 
 func TestDesktopServices(t *testing.T) {
@@ -154,8 +154,8 @@ func TestDesktopServices(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DeployLayer failed: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(tempGameDir, "js", "plugins", "NST_TranslationLayer.js")); err != nil {
-		t.Errorf("NST_TranslationLayer.js was not deployed: %v", err)
+	if _, err := os.Stat(filepath.Join(tempGameDir, "js", "plugins", "Lingo_TranslationLayer.js")); err != nil {
+		t.Errorf("Lingo_TranslationLayer.js was not deployed: %v", err)
 	}
 
 	// 9. Test ProjectService Close and OpenWorkspace

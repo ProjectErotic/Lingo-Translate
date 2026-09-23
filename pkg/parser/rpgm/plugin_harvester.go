@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
 var (

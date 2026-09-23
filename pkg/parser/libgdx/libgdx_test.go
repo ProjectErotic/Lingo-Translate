@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
 func createMockLibGDXJar(t *testing.T, jarPath string) {

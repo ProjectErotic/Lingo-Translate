@@ -8,8 +8,8 @@ import {
   Button,
   Input,
 } from "@/ui";
-import { SettingsService } from "@bindings/nst-go/cmd/nst-desktop";
-import type { Settings } from "@bindings/nst-go/cmd/nst-desktop";
+import { SettingsService } from "@bindings/lingo-translate/cmd/lingo-desktop";
+import type { Settings } from "@bindings/lingo-translate/cmd/lingo-desktop";
 import { toast } from "sonner";
 import {
   Save,
@@ -650,7 +650,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">External Provider Plugins</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Auto-discovered declarative plugins from <code>providers/</code> and <code>~/.config/nst/providers/</code>.
+                      Auto-discovered declarative plugins from <code>providers/</code> and <code>~/.config/lingo/providers/</code>.
                     </p>
                   </div>
                   <Button
@@ -708,7 +708,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 </div>
 
                 <div className="text-xs text-muted-foreground bg-card/60 p-3 rounded border border-border mt-3">
-                  💡 Drop any new <code>.json</code> provider definition in <code>providers/</code> or <code>~/.config/nst/providers/</code> to expand translation models dynamically without rebuilding the app.
+                  💡 Drop any new <code>.json</code> provider definition in <code>providers/</code> or <code>~/.config/lingo/providers/</code> to expand translation models dynamically without rebuilding the app.
                 </div>
               </div>
             )}
@@ -797,7 +797,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     NST
                   </div>
                   <div>
-                    <h2 className="font-bold text-base text-foreground">NST Ghost - Novelty Translation Tool</h2>
+                    <h2 className="font-bold text-base text-foreground">Lingo Translate - Game Translation Suite</h2>
                     <p className="text-xs text-muted-foreground">Version {__APP_VERSION__} (Go Edition)</p>
                   </div>
                 </div>

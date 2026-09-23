@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"nst-go/pkg/translator"
+	"lingo-translate/pkg/translator"
 )
 
 func TestTranslateJSON(t *testing.T) {

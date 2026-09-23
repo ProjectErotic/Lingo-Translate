@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"nst-go/pkg/app"
+	"lingo-translate/pkg/app"
 )
 
 // Session holds the shared open workspace reference across all desktop services

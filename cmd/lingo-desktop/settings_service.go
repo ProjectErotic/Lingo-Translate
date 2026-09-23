@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"nst-go/pkg/app"
-	"nst-go/pkg/plugins/chanomhub"
+	"lingo-translate/pkg/app"
+	"lingo-translate/pkg/plugins/chanomhub"
 )
 
 type Settings struct {
@@ -45,7 +45,7 @@ func NewSettingsService(customPath ...string) *SettingsService {
 		if err != nil {
 			cfgDir = "."
 		}
-		path = filepath.Join(cfgDir, "nst", "settings.json")
+		path = filepath.Join(cfgDir, "lingo", "settings.json")
 	}
 	return &SettingsService{filePath: path}
 }
@@ -62,7 +62,11 @@ func defaultSettings() Settings {
 		Theme:              "dark",
 	}
 
-	if envKey := os.Getenv("NST_API_KEY"); envKey != "" {
+	if envKey := os.Getenv("LINGO_API_KEY"); envKey != "" {
+		s.GeminiAPIKey = envKey
+		s.OpenAIAPIKey = envKey
+		s.GoogleAPIKey = envKey
+	} else if envKey := os.Getenv("NST_API_KEY"); envKey != "" { // legacy fallback
 		s.GeminiAPIKey = envKey
 		s.OpenAIAPIKey = envKey
 		s.GoogleAPIKey = envKey

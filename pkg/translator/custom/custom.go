@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"nst-go/pkg/translator"
-	"nst-go/pkg/translator/openai"
+	"lingo-translate/pkg/translator"
+	"lingo-translate/pkg/translator/openai"
 )
 
 // Definition represents a declarative external translation provider configuration (JSON file)
@@ -42,9 +42,9 @@ func GetSearchDirs() []string {
 		dirs = append(dirs, filepath.Join(homeDir, ".nst"))
 	}
 
-	// 2. User config directory ~/.config/nst/providers
+	// 2. User config directory ~/.config/lingo/providers
 	if cfgDir, err := os.UserConfigDir(); err == nil {
-		dirs = append(dirs, filepath.Join(cfgDir, "nst", "providers"))
+		dirs = append(dirs, filepath.Join(cfgDir, "lingo", "providers"))
 	}
 
 	// 3. Current working directory ./providers
@@ -66,7 +66,7 @@ func GetUserConfigDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dir := filepath.Join(cfgDir, "nst", "providers")
+	dir := filepath.Join(cfgDir, "lingo", "providers")
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return "", err
 	}
@@ -137,7 +137,7 @@ func Find(name string) (*Definition, error) {
 	return nil, fmt.Errorf("custom provider %q not found", name)
 }
 
-// Save writes a provider definition to the user's config directory (~/.config/nst/providers/<name>.json)
+// Save writes a provider definition to the user's config directory (~/.config/lingo/providers/<name>.json)
 func Save(def Definition) error {
 	if strings.TrimSpace(def.Name) == "" {
 		return fmt.Errorf("provider name cannot be empty")

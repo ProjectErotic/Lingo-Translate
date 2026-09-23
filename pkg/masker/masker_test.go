@@ -16,8 +16,8 @@ func TestMaskAndUnmask(t *testing.T) {
 			input: `\C[1]Hero\C[0]: I have \V[10] coins!`,
 			simulatedLLM: func(masked string) string {
 				// Simulates translation to Thai
-				// "__NST_TAG_0__Hero__NST_TAG_1__: I have __NST_TAG_2__ coins!"
-				return "__NST_TAG_0__ผู้กล้า__NST_TAG_1__: ฉันมีเหรียญ __NST_TAG_2__ เหรียญ!"
+				// "__LINGO_TAG_0__Hero__LINGO_TAG_1__: I have __LINGO_TAG_2__ coins!"
+				return "__LINGO_TAG_0__ผู้กล้า__LINGO_TAG_1__: ฉันมีเหรียญ __LINGO_TAG_2__ เหรียญ!"
 			},
 			expected: `\C[1]ผู้กล้า\C[0]: ฉันมีเหรียญ \V[10] เหรียญ!`,
 		},
@@ -25,7 +25,7 @@ func TestMaskAndUnmask(t *testing.T) {
 			name:  "Double backslashes JSON format",
 			input: `\\N[1] went to the store.`,
 			simulatedLLM: func(masked string) string {
-				return "__NST_TAG_0__ เดินไปที่ร้านค้า"
+				return "__LINGO_TAG_0__ เดินไปที่ร้านค้า"
 			},
 			expected: `\\N[1] เดินไปที่ร้านค้า`,
 		},
@@ -33,8 +33,8 @@ func TestMaskAndUnmask(t *testing.T) {
 			name:  "Fuzzy LLM whitespace recovery",
 			input: `Danger! \!\{Run!\}`,
 			simulatedLLM: func(masked string) string {
-				// LLM accidentally puts spaces inside tag e.g. __ NST_TAG_0 __
-				return "อันตราย! __ NST_TAG_0 ____NST_TAG_1__วิ่ง!__NST_TAG_2__"
+				// LLM accidentally puts spaces inside tag e.g. __ LINGO_TAG_0 __
+				return "อันตราย! __ LINGO_TAG_0 ____LINGO_TAG_1__วิ่ง!__LINGO_TAG_2__"
 			},
 			expected: `อันตราย! \!\{วิ่ง!\}`,
 		},

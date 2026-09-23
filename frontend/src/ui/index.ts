@@ -1,5 +1,5 @@
 /**
- * NST UI Design System & Component Gateway
+ * Lingo UI Design System & Component Gateway
  *
  * All primitive components MUST be imported from '@/ui'.
  * Direct/deep imports from component subpaths are prohibited.

@@ -256,14 +256,17 @@ func (c *Client) PublishTranslation(ctx context.Context, req PublishRequest) (*P
 		uploadFileName = filepath.Base(req.PatchFile)
 		fileSize = fi.Size()
 	} else {
-		// 1. Locate legacy translations directory
-		transDir := filepath.Join(req.GameDir, "nst_translations")
+		// 1. Locate translations directory (lingo_translations, or fallback to legacy nst_translations)
+		transDir := filepath.Join(req.GameDir, "lingo_translations")
+		if fi, err := os.Stat(transDir); err != nil || !fi.IsDir() {
+			transDir = filepath.Join(req.GameDir, "nst_translations")
+		}
 		if fi, err := os.Stat(transDir); err != nil || !fi.IsDir() {
 			// Fallback: check if gameDir itself has config.json or translations
 			if _, err := os.Stat(filepath.Join(req.GameDir, "config.json")); err == nil {
 				transDir = req.GameDir
 			} else {
-				return nil, fmt.Errorf("no patch file specified and no 'nst_translations' directory found in %s", req.GameDir)
+				return nil, fmt.Errorf("no patch file specified and no 'lingo_translations' or 'nst_translations' directory found in %s", req.GameDir)
 			}
 		}
 

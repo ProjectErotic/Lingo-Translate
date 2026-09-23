@@ -25,7 +25,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Info className="w-5 h-5 text-primary" />
-            About NST Ghost
+            About Lingo Translate
           </DialogTitle>
         </DialogHeader>
 
@@ -36,7 +36,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
             </div>
             <div>
               <h2 className="font-bold text-sm text-foreground">
-                Novelty Translation Tool (Go Edition)
+                Game Translation Suite (Go Edition)
               </h2>
               <p className="text-[11px] text-muted-foreground">Version {__APP_VERSION__} · Wails v3 Desktop</p>
             </div>

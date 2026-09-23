@@ -16,12 +16,12 @@ import (
 	"sync"
 	"time"
 
-	"nst-go/pkg/app"
-	"nst-go/pkg/model"
-	"nst-go/pkg/plugins/chanomhub"
-	"nst-go/pkg/registry"
-	"nst-go/pkg/storage"
-	"nst-go/pkg/translator/custom"
+	"lingo-translate/pkg/app"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/plugins/chanomhub"
+	"lingo-translate/pkg/registry"
+	"lingo-translate/pkg/storage"
+	"lingo-translate/pkg/translator/custom"
 )
 
 //go:embed static/*
@@ -96,9 +96,9 @@ func (s *Server) Start() error {
 	url := fmt.Sprintf("http://localhost:%d", s.port)
 	fmt.Println("==================================================")
 	if s.mode == ModeDesktop || s.mode == "app" || s.mode == "gui" {
-		fmt.Printf("🖥️  NST Desktop Application starting at: %s\n", url)
+		fmt.Printf("🖥️  Lingo Desktop Application starting at: %s\n", url)
 	} else {
-		fmt.Printf("🌐 NST Web Dashboard running at: %s\n", url)
+		fmt.Printf("🌐 Lingo Web Dashboard running at: %s\n", url)
 	}
 	fmt.Println("   Press Ctrl+C to stop")
 	fmt.Println("==================================================")

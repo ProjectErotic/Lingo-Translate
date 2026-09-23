@@ -12,16 +12,16 @@ import (
 	"sync"
 	"time"
 
-	"nst-go/pkg/model"
-	"nst-go/pkg/parser"
-	"nst-go/pkg/pipeline"
-	"nst-go/pkg/plugins/chanomhub"
-	"nst-go/pkg/storage"
-	"nst-go/pkg/translator"
-	"nst-go/pkg/translator/gemini"
-	"nst-go/pkg/translator/mock"
-	"nst-go/pkg/translator/openai"
-	"nst-go/pkg/version"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/parser"
+	"lingo-translate/pkg/pipeline"
+	"lingo-translate/pkg/plugins/chanomhub"
+	"lingo-translate/pkg/storage"
+	"lingo-translate/pkg/translator"
+	"lingo-translate/pkg/translator/gemini"
+	"lingo-translate/pkg/translator/mock"
+	"lingo-translate/pkg/translator/openai"
+	"lingo-translate/pkg/version"
 )
 
 // Server represents an MCP (Model Context Protocol) Server
@@ -125,7 +125,7 @@ func (s *Server) HandleRequest(ctx context.Context, req *RPCRequest) *RPCRespons
 			Result: map[string]interface{}{
 				"protocolVersion": "2024-11-05",
 				"serverInfo": map[string]string{
-					"name":    "nst-server",
+					"name":    "lingo-server",
 					"version": version.Get() + "-go",
 				},
 				"capabilities": map[string]interface{}{
@@ -194,7 +194,7 @@ func (s *Server) HandleRequest(ctx context.Context, req *RPCRequest) *RPCRespons
 func (s *Server) ListTools() []map[string]interface{} {
 	return []map[string]interface{}{
 		{
-			"name":        "nst_load_project",
+			"name":        "lingo_load_project",
 			"description": "Load a game project, auto-detect the engine, and extract translatable texts into a workspace",
 			"inputSchema": map[string]interface{}{
 				"type": "object",
@@ -216,7 +216,7 @@ func (s *Server) ListTools() []map[string]interface{} {
 			},
 		},
 		{
-			"name":        "nst_get_status",
+			"name":        "lingo_get_status",
 			"description": "Get workspace stats, total texts, translated count, and engine information",
 			"inputSchema": map[string]interface{}{
 				"type": "object",
@@ -230,7 +230,7 @@ func (s *Server) ListTools() []map[string]interface{} {
 			},
 		},
 		{
-			"name":        "nst_query_entries",
+			"name":        "lingo_query_entries",
 			"description": "Query or search extracted text entries from a workspace",
 			"inputSchema": map[string]interface{}{
 				"type": "object",
@@ -252,7 +252,7 @@ func (s *Server) ListTools() []map[string]interface{} {
 			},
 		},
 		{
-			"name":        "nst_update_entry",
+			"name":        "lingo_update_entry",
 			"description": "Update the translation of a specific text entry in the workspace",
 			"inputSchema": map[string]interface{}{
 				"type": "object",
@@ -274,7 +274,7 @@ func (s *Server) ListTools() []map[string]interface{} {
 			},
 		},
 		{
-			"name":        "nst_translate",
+			"name":        "lingo_translate",
 			"description": "Run automated AI translation batch on untranslated texts in the workspace",
 			"inputSchema": map[string]interface{}{
 				"type": "object",
@@ -296,7 +296,7 @@ func (s *Server) ListTools() []map[string]interface{} {
 			},
 		},
 		{
-			"name":        "nst_deploy",
+			"name":        "lingo_deploy",
 			"description": "Deploy translated texts back into game files or export runtime translation mod",
 			"inputSchema": map[string]interface{}{
 				"type": "object",
@@ -318,14 +318,14 @@ func (s *Server) ListTools() []map[string]interface{} {
 			},
 		},
 		{
-			"name":        "nst_publish_chanomhub",
+			"name":        "lingo_publish_chanomhub",
 			"description": "Compress translations and publish directly to Chanomhub mod portal",
 			"inputSchema": map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
 					"game_path": map[string]interface{}{
 						"type":        "string",
-						"description": "Game root path containing nst_translations/",
+						"description": "Game root path containing lingo_translations/",
 					},
 					"slug": map[string]interface{}{
 						"type":        "string",
@@ -349,7 +349,7 @@ func (s *Server) ListTools() []map[string]interface{} {
 // CallTool executes a specific tool by name with arguments
 func (s *Server) CallTool(ctx context.Context, name string, args json.RawMessage) (*ToolCallResult, error) {
 	switch name {
-	case "nst_load_project":
+	case "lingo_load_project", "nst_load_project":
 		var p struct {
 			Path      string `json:"path"`
 			Workspace string `json:"workspace"`
@@ -406,7 +406,7 @@ func (s *Server) CallTool(ctx context.Context, name string, args json.RawMessage
 			},
 		}, nil
 
-	case "nst_get_status":
+	case "lingo_get_status", "nst_get_status":
 		var p struct {
 			Workspace string `json:"workspace"`
 		}
@@ -443,7 +443,7 @@ func (s *Server) CallTool(ctx context.Context, name string, args json.RawMessage
 			Content: []ToolContent{{Type: "text", Text: resText}},
 		}, nil
 
-	case "nst_query_entries":
+	case "lingo_query_entries", "nst_query_entries":
 		var p struct {
 			Workspace string `json:"workspace"`
 			Status    string `json:"status"`
@@ -479,7 +479,7 @@ func (s *Server) CallTool(ctx context.Context, name string, args json.RawMessage
 			Content: []ToolContent{{Type: "text", Text: string(data)}},
 		}, nil
 
-	case "nst_update_entry":
+	case "lingo_update_entry", "nst_update_entry":
 		var p struct {
 			Workspace string `json:"workspace"`
 			ID        string `json:"id"`
@@ -503,7 +503,7 @@ func (s *Server) CallTool(ctx context.Context, name string, args json.RawMessage
 			Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Updated entry %s successfully.", p.ID)}},
 		}, nil
 
-	case "nst_translate":
+	case "lingo_translate", "nst_translate":
 		var p struct {
 			Workspace string `json:"workspace"`
 			Provider  string `json:"provider"`
@@ -522,7 +522,7 @@ func (s *Server) CallTool(ctx context.Context, name string, args json.RawMessage
 
 		apiKey := p.APIKey
 		if apiKey == "" {
-			apiKey = os.Getenv("NST_API_KEY")
+			apiKey = os.Getenv("LINGO_API_KEY")
 		}
 
 		var trans translator.Translator
@@ -564,7 +564,7 @@ func (s *Server) CallTool(ctx context.Context, name string, args json.RawMessage
 			Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Translation completed for %d entries.", len(entries))}},
 		}, nil
 
-	case "nst_deploy":
+	case "lingo_deploy", "nst_deploy":
 		var p struct {
 			Workspace string `json:"workspace"`
 			GamePath  string `json:"game_path"`
@@ -602,7 +602,7 @@ func (s *Server) CallTool(ctx context.Context, name string, args json.RawMessage
 			Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Deployed translations into %s successfully.", p.DestPath)}},
 		}, nil
 
-	case "nst_publish_chanomhub":
+	case "lingo_publish_chanomhub", "nst_publish_chanomhub":
 		var p struct {
 			GamePath string `json:"game_path"`
 			Slug     string `json:"slug"`

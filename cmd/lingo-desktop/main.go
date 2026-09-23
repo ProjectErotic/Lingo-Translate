@@ -5,8 +5,8 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"nst-go/frontend"
-	"nst-go/pkg/model"
+	"lingo-translate/frontend"
+	"lingo-translate/pkg/model"
 )
 
 func init() {
@@ -25,8 +25,8 @@ func main() {
 	settingsService := NewSettingsService()
 
 	app := application.New(application.Options{
-		Name:        "nst-desktop",
-		Description: "NST Ghost - Novelty Translation Tool",
+		Name:        "lingo-desktop",
+		Description: "Lingo Translate - Game Translation Suite",
 		Services: []application.Service{
 			application.NewService(projectService),
 			application.NewService(entryService),
@@ -43,7 +43,7 @@ func main() {
 	})
 
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  "NST Ghost - Novelty Translation Tool",
+		Title:  "Lingo Translate - Game Translation Suite",
 		Width:  1320,
 		Height: 880,
 		MinWidth: 1000,

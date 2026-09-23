@@ -9,22 +9,22 @@ import (
 	"sync"
 	"time"
 
-	renpyInj "nst-go/pkg/injection/renpy"
-	rpgmInj "nst-go/pkg/injection/rpgm"
-	"nst-go/pkg/merger"
-	"nst-go/pkg/model"
-	"nst-go/pkg/parser"
-	"nst-go/pkg/patch"
-	"nst-go/pkg/pipeline"
-	"nst-go/pkg/plugins/chanomhub"
-	"nst-go/pkg/registry"
-	"nst-go/pkg/storage"
-	"nst-go/pkg/translator"
-	"nst-go/pkg/translator/custom"
-	"nst-go/pkg/translator/gemini"
-	"nst-go/pkg/translator/google"
-	"nst-go/pkg/translator/mock"
-	"nst-go/pkg/translator/openai"
+	renpyInj "lingo-translate/pkg/injection/renpy"
+	rpgmInj "lingo-translate/pkg/injection/rpgm"
+	"lingo-translate/pkg/merger"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/parser"
+	"lingo-translate/pkg/patch"
+	"lingo-translate/pkg/pipeline"
+	"lingo-translate/pkg/plugins/chanomhub"
+	"lingo-translate/pkg/registry"
+	"lingo-translate/pkg/storage"
+	"lingo-translate/pkg/translator"
+	"lingo-translate/pkg/translator/custom"
+	"lingo-translate/pkg/translator/gemini"
+	"lingo-translate/pkg/translator/google"
+	"lingo-translate/pkg/translator/mock"
+	"lingo-translate/pkg/translator/openai"
 )
 
 // ProviderConfig holds configuration for constructing a translator provider
@@ -71,18 +71,35 @@ type Workspace struct {
 	project *model.Project
 }
 
-// GetNSTHomeDir returns ~/.nst directory path, ensuring it exists
-func GetNSTHomeDir() string {
+// GetLingoHomeDir returns ~/.lingo directory path, ensuring it exists.
+// Falls back to ~/.lingo if it exists and ~/.lingo doesn't (backward compat).
+func GetLingoHomeDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		home = "."
 	}
-	nstDir := filepath.Join(home, ".nst")
-	_ = os.MkdirAll(nstDir, 0755)
-	return nstDir
+	lingoDir := filepath.Join(home, ".lingo")
+	legacyDir := filepath.Join(home, ".nst")
+
+	// If ~/.lingo already exists, use it
+	if fi, err := os.Stat(lingoDir); err == nil && fi.IsDir() {
+		return lingoDir
+	}
+	// If ~/.lingo exists but ~/.lingo doesn't, use legacy path
+	if fi, err := os.Stat(legacyDir); err == nil && fi.IsDir() {
+		return legacyDir
+	}
+	// Neither exists — create ~/.lingo
+	_ = os.MkdirAll(lingoDir, 0755)
+	return lingoDir
 }
 
-// ResolveWorkspacePath automatically resolves workspace paths to ~/.nst/<name>.nst
+// GetNSTHomeDir is a backward-compat alias for GetLingoHomeDir.
+func GetNSTHomeDir() string {
+	return GetLingoHomeDir()
+}
+
+// ResolveWorkspacePath automatically resolves workspace paths to ~/.lingo/<name>.nst
 // if no explicit relative/absolute directory path is provided.
 func ResolveWorkspacePath(wsPath string, gamePath ...string) string {
 	nstDir := GetNSTHomeDir()
@@ -125,19 +142,19 @@ func ResolveWorkspacePath(wsPath string, gamePath ...string) string {
 		return name
 	}
 
-	// Check if exists in ~/.nst/workspaces/
+	// Check if exists in ~/.lingo/workspaces/
 	wsSubdir := filepath.Join(nstDir, "workspaces", name)
 	if fi, err := os.Stat(wsSubdir); err == nil && !fi.IsDir() {
 		return wsSubdir
 	}
 
-	// Check if exists in ~/.nst/<name>
+	// Check if exists in ~/.lingo/<name>
 	nstFile := filepath.Join(nstDir, name)
 	if fi, err := os.Stat(nstFile); err == nil && !fi.IsDir() {
 		return nstFile
 	}
 
-	// Default destination for new workspaces: ~/.nst/<name>
+	// Default destination for new workspaces: ~/.lingo/<name>
 	return nstFile
 }
 
@@ -657,7 +674,7 @@ func CreateTranslator(cfg ProviderConfig) (translator.Translator, error) {
 			Timeout: cfg.Timeout,
 		}), nil
 	default:
-		// Attempt to load external custom provider definition (e.g. from ~/.config/nst/providers/*.json or ./providers/*.json)
+		// Attempt to load external custom provider definition (e.g. from ~/.config/lingo/providers/*.json or ./providers/*.json)
 		if customDef, err := custom.Find(cfg.Name); err == nil {
 			return custom.NewTranslator(*customDef, cfg.APIKey, cfg.Model, cfg.BaseURL)
 		}
@@ -671,7 +688,7 @@ func Publish(ctx context.Context, opts PublishOptions) (*chanomhub.PublishResult
 		opts.Token = chanomhub.GetEffectiveToken()
 	}
 	if opts.Token == "" {
-		return nil, fmt.Errorf("token is required to publish (run 'nst login' to authenticate)")
+		return nil, fmt.Errorf("token is required to publish (run 'lingo login' to authenticate)")
 	}
 	if opts.APIBase == "" {
 		opts.APIBase = chanomhub.GetEffectiveAPIBase()
@@ -800,17 +817,17 @@ func Publish(ctx context.Context, opts PublishOptions) (*chanomhub.PublishResult
 	}
 
 	// Customizable credit: public pen name / alias.
-	// Defaults to "NST Translator". Sensitive account information is never sent;
+	// Defaults to "Lingo Translator". Sensitive account information is never sent;
 	// the server verifies user identity safely via the Bearer token.
-	if credit == "" || credit == "NST" {
-		credit = "NST Translator"
+	if credit == "" || credit == "Lingo Translate" {
+		credit = "Lingo Translator"
 	}
 
 	if configData == nil {
 		configData = make(map[string]interface{})
 	}
 	configData["credit_to"] = credit
-	configData["translator_tool"] = "NST-V2"
+	configData["translator_tool"] = "Lingo-Translate"
 	configData["ai_model"] = translatorModel
 	configData["source_language"] = sourceLang
 	configData["target_language"] = lang

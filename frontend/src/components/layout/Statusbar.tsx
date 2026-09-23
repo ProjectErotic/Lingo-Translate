@@ -1,7 +1,7 @@
 import React from "react";
 import { Badge, Progress } from "@/ui";
-import type { Project } from "@bindings/nst-go/pkg/model";
-import type { WorkspaceStats } from "@bindings/nst-go/pkg/storage";
+import type { Project } from "@bindings/lingo-translate/pkg/model";
+import type { WorkspaceStats } from "@bindings/lingo-translate/pkg/storage";
 
 interface StatusbarProps {
   project: Project | null;

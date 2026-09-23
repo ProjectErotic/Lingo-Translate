@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"nst-go/pkg/translator"
-	"nst-go/pkg/translator/prompts"
+	"lingo-translate/pkg/translator"
+	"lingo-translate/pkg/translator/prompts"
 )
 
 type Config struct {

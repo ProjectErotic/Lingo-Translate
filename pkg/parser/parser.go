@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"nst-go/pkg/model"
-	"nst-go/pkg/parser/godot"
-	"nst-go/pkg/parser/libgdx"
-	"nst-go/pkg/parser/renpy"
-	"nst-go/pkg/parser/rpgm"
-	"nst-go/pkg/parser/unity"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/parser/godot"
+	"lingo-translate/pkg/parser/libgdx"
+	"lingo-translate/pkg/parser/renpy"
+	"lingo-translate/pkg/parser/rpgm"
+	"lingo-translate/pkg/parser/unity"
 )
 
 // EngineParser defines the interface each game engine parser must implement

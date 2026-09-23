@@ -180,8 +180,8 @@
 					"$(inherited)",
 					"-ObjC",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.example.nstdesktop";
-				PRODUCT_NAME = "My Product";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.projecterotic.lingo";
+				PRODUCT_NAME = "Lingo Translate";
 				CODE_SIGNING_ALLOWED = NO;
 				SDKROOT = iphoneos;
 			};
@@ -196,8 +196,8 @@
 					"$(inherited)",
 					"-ObjC",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.example.nstdesktop";
-				PRODUCT_NAME = "My Product";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.projecterotic.lingo";
+				PRODUCT_NAME = "Lingo Translate";
 				CODE_SIGNING_ALLOWED = NO;
 				SDKROOT = iphoneos;
 			};

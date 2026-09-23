@@ -21,7 +21,7 @@ jobs:
 
       - name: Go Vet
         run: |
-          go vet ./pkg/... ./cmd/nst/...
+          go vet ./pkg/... ./cmd/lingo/...
 
       - name: Run Unit Tests
         run: |
@@ -29,5 +29,5 @@ jobs:
 
       - name: Test Build CLI
         run: |
-          CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/nst ./cmd/nst
-          ./bin/nst version
+          CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/lingo ./cmd/lingo
+          ./bin/lingo version

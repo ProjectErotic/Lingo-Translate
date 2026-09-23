@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
 // Event Codes for RPG Maker MV/MZ

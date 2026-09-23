@@ -108,7 +108,7 @@ export class CommandRegistry {
 
   public isDebugEnabled(): boolean {
     if (this.debugMode) return true;
-    if (typeof window !== "undefined" && (window as any).__NST_KEYBINDINGS_DEBUG__) return true;
+    if (typeof window !== "undefined" && (window as any).__LINGO_KEYBINDINGS_DEBUG__) return true;
     return false;
   }
 
@@ -155,7 +155,7 @@ export class CommandRegistry {
       const preventInInput = cmd.preventInInput ?? true;
       if (isEditing && preventInInput) {
         if (debug) {
-          console.debug(`[NST Shortcut Suppressed in Input] command='${cmd.id}' keybinding='${cmd.keybinding}'`);
+          console.debug(`[Lingo Shortcut Suppressed in Input] command='${cmd.id}' keybinding='${cmd.keybinding}'`);
         }
         continue;
       }
@@ -163,13 +163,13 @@ export class CommandRegistry {
       // Check conditional 'when' guard
       if (cmd.when && !cmd.when()) {
         if (debug) {
-          console.debug(`[NST Shortcut Guard Failed] command='${cmd.id}' 'when' condition returned false`);
+          console.debug(`[Lingo Shortcut Guard Failed] command='${cmd.id}' 'when' condition returned false`);
         }
         continue;
       }
 
       if (debug) {
-        console.debug(`[NST Shortcut Triggered] command='${cmd.id}' keybinding='${cmd.keybinding}' scope='${cmd.scope || "global"}' (hardware code='${e.code}', printed key='${e.key}')`);
+        console.debug(`[Lingo Shortcut Triggered] command='${cmd.id}' keybinding='${cmd.keybinding}' scope='${cmd.scope || "global"}' (hardware code='${e.code}', printed key='${e.key}')`);
       }
 
       // Matched! Consume event and execute command
@@ -186,7 +186,7 @@ export class CommandRegistry {
     }
 
     if (debug && (e.ctrlKey || e.metaKey || e.altKey)) {
-      console.debug(`[NST Shortcut Unmatched] code='${e.code}' key='${e.key}' activeScope='${activeScope}' isEditing=${isEditing}`);
+      console.debug(`[Lingo Shortcut Unmatched] code='${e.code}' key='${e.key}' activeScope='${activeScope}' isEditing=${isEditing}`);
     }
 
     return false;
@@ -214,6 +214,6 @@ export const defaultCommandRegistry = new CommandRegistry();
 
 // Expose on window object in browser / desktop runtime for instant DevTools diagnostics
 if (typeof window !== "undefined") {
-  (window as any).__NST_COMMANDS__ = defaultCommandRegistry;
+  (window as any).__LINGO_COMMANDS__ = defaultCommandRegistry;
 }
 

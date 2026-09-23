@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 	_ "modernc.org/sqlite"
 )
 

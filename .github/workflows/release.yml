@@ -131,14 +131,14 @@ jobs:
           GOARCH: ${{ matrix.arch }}
           VER: ${{ needs.check-and-test.outputs.version }}
         run: |
-          OUTPUT_NAME="nst${{ matrix.ext }}"
+          OUTPUT_NAME="lingo${{ matrix.ext }}"
           mkdir -p bin
           # 1. Build CLI (Always Pure Go CGO_ENABLED=0)
-          CGO_ENABLED=0 go build -ldflags="-s -w -X 'main.version=${VER}' -X 'nst-go/pkg/version.Version=${VER}'" -o "bin/${OUTPUT_NAME}" ./cmd/nst
+          CGO_ENABLED=0 go build -ldflags="-s -w -X 'main.version=${VER}' -X 'lingo-translate/pkg/version.Version=${VER}'" -o "bin/${OUTPUT_NAME}" ./cmd/lingo
 
           # 2. Build Native Desktop GUI for Linux amd64
           if [ "${{ matrix.os }}" = "linux" ] && [ "${{ matrix.arch }}" = "amd64" ]; then
-            CGO_ENABLED=1 go build -tags gtk3 -ldflags="-s -w -X 'main.version=${VER}' -X 'nst-go/pkg/version.Version=${VER}'" -o "bin/nst-desktop" ./cmd/nst-desktop
+            CGO_ENABLED=1 go build -tags gtk3 -ldflags="-s -w -X 'main.version=${VER}' -X 'lingo-translate/pkg/version.Version=${VER}'" -o "bin/lingo-desktop" ./cmd/lingo-desktop
           fi
 
       - name: Package Archive
@@ -149,18 +149,18 @@ jobs:
           ARCH: ${{ matrix.arch }}
           FORMAT: ${{ matrix.format }}
         run: |
-          PACKAGE_NAME="nst-v${VER}-${OS}-${ARCH}"
+          PACKAGE_NAME="lingo-v${VER}-${OS}-${ARCH}"
           mkdir -p "dist_staging/${PACKAGE_NAME}"
 
           # Copy binaries and LICENSE
-          cp bin/nst* "dist_staging/${PACKAGE_NAME}/"
+          cp bin/lingo* "dist_staging/${PACKAGE_NAME}/"
           cp LICENSE "dist_staging/${PACKAGE_NAME}/"
 
           # Include Desktop shortcut and icon for Linux
           if [ "${OS}" = "linux" ]; then
             cp build/appicon.png "dist_staging/${PACKAGE_NAME}/icon.png"
-            cp build/linux/NST.desktop "dist_staging/${PACKAGE_NAME}/NST.desktop"
-            chmod +x "dist_staging/${PACKAGE_NAME}/NST.desktop"
+            cp build/linux/Lingo.desktop "dist_staging/${PACKAGE_NAME}/Lingo.desktop"
+            chmod +x "dist_staging/${PACKAGE_NAME}/Lingo.desktop"
           fi
 
           mkdir -p release_assets
@@ -209,7 +209,7 @@ jobs:
       - name: Upload All Dist Packages to Workflow Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nst-v${{ needs.check-and-test.outputs.version }}-all-platforms
+          name: lingo-v${{ needs.check-and-test.outputs.version }}-all-platforms
           path: release_dist/*
           retention-days: 30
 
@@ -231,7 +231,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.check-and-test.outputs.tag }}
-          name: "NST-V2 ${{ needs.check-and-test.outputs.tag }}"
+          name: "Lingo-Translate ${{ needs.check-and-test.outputs.tag }}"
           target_commitish: ${{ github.sha }}
           draft: false
           prerelease: ${{ contains(needs.check-and-test.outputs.version, '-alpha') || contains(needs.check-and-test.outputs.version, '-beta') || contains(needs.check-and-test.outputs.version, '-rc') }}

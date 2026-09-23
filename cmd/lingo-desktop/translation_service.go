@@ -7,8 +7,8 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"nst-go/pkg/app"
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/app"
+	"lingo-translate/pkg/model"
 )
 
 type TranslationDonePayload struct {

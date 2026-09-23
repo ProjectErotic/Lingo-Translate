@@ -13,14 +13,14 @@ import (
 )
 
 func TestChanomhubZipAndPublish(t *testing.T) {
-	// 1. Create a dummy nst_translations directory
+	// 1. Create a dummy lingo_translations directory
 	tmpDir, err := os.MkdirTemp("", "nst_chanomhub_test_*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
-	transDir := filepath.Join(tmpDir, "nst_translations")
+	transDir := filepath.Join(tmpDir, "lingo_translations")
 	_ = os.MkdirAll(transDir, 0755)
 	_ = os.WriteFile(filepath.Join(transDir, "config.json"), []byte(`{"version":"1.0","language":"Thai"}`), 0644)
 	_ = os.WriteFile(filepath.Join(transDir, "Map001.txt"), []byte("<<<ORIGINAL>>>\nHello\n<<<TRANSLATED>>>\nสวัสดี\n"), 0644)

@@ -9,7 +9,7 @@ import {
   Input,
   Badge,
 } from "@/ui";
-import { ProjectService } from "@bindings/nst-go/cmd/nst-desktop";
+import { ProjectService } from "@bindings/lingo-translate/cmd/lingo-desktop";
 import { toast } from "sonner";
 import { FolderOpen, Sparkles, Loader2 } from "lucide-react";
 

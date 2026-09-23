@@ -13,15 +13,15 @@ import (
 	"strings"
 	"time"
 
-	"nst-go/pkg/app"
-	"nst-go/pkg/mcp"
-	"nst-go/pkg/model"
-	"nst-go/pkg/plugins/chanomhub"
-	"nst-go/pkg/registry"
-	"nst-go/pkg/storage"
-	"nst-go/pkg/translator/prompts"
-	appVersion "nst-go/pkg/version"
-	"nst-go/pkg/webui"
+	"lingo-translate/pkg/app"
+	"lingo-translate/pkg/mcp"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/plugins/chanomhub"
+	"lingo-translate/pkg/registry"
+	"lingo-translate/pkg/storage"
+	"lingo-translate/pkg/translator/prompts"
+	appVersion "lingo-translate/pkg/version"
+	"lingo-translate/pkg/webui"
 
 	"golang.org/x/term"
 )
@@ -40,11 +40,26 @@ func main() {
 
 	if len(os.Args) < 2 {
 		printUsage()
-		fmt.Println("\nTip: Run 'nst ui' for web dashboard, or 'nst-desktop' for the GUI.")
+		fmt.Println("\nTip: Run 'lingo ui' for web dashboard, or 'lingo-desktop' for the GUI.")
 		return
 	}
 
 	command := os.Args[1]
+
+	// Backward compatibility: if invoked with flags directly (e.g. -e rpgm -p /path), route to handleExtract
+	if strings.HasPrefix(command, "-") {
+		switch command {
+		case "-v", "--version", "-version":
+			fmt.Printf("Lingo CLI %s\n", version)
+			return
+		case "-h", "--help", "-help":
+			printUsage()
+			return
+		default:
+			handleExtract(os.Args[1:])
+			return
+		}
+	}
 
 	switch command {
 	case "app", "desktop", "gui":
@@ -90,7 +105,7 @@ func main() {
 	case "styles", "templates":
 		handleStyles(os.Args[2:])
 	case "version", "-v", "--version":
-		fmt.Printf("NST CLI %s\n", version)
+		fmt.Printf("Lingo CLI %s\n", version)
 	case "help", "-h", "--help":
 		printUsage()
 	default:
@@ -101,13 +116,13 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Println(`NST (Novelty Translation Tool) - Next-Gen Go Edition
+	fmt.Println(`Lingo Translate - Next-Gen Game Translation Suite
 
 Usage:
-  nst <command> [arguments]
+  lingo <command> [arguments]
 
 Commands:
-  app          Launch the NST Desktop Window Application (standalone native window)
+  app          Launch the Lingo Desktop Window Application (standalone native window)
   ui           Launch the interactive Web Dashboard in browser (recommended)
   extract      Extract translatable texts from a game into a .nst workspace file
   translate    Translate extracted texts using AI or Translation APIs
@@ -130,35 +145,47 @@ Commands:
   version      Show version info
 
 Examples:
-  nst ui
-  nst providers
-  nst login
-  nst whoami
-  nst extract -path ./MyGame -workspace ./project.nst
-  nst translate -workspace ./project.nst -provider gpt -source Japanese -target Thai
-  nst inject -path ./MyGame -workspace ./project.nst -dest ./MyGame_Translated
-  nst deploy -path ./MyGame -workspace ./project.nst
-  nst publish -path ./MyGame -slug my-game-slug
-  nst mcp`)
+  lingo ui
+  lingo providers
+  lingo login
+  lingo whoami
+  lingo extract -path ./MyGame -workspace ./project.nst
+  lingo translate -workspace ./project.nst -provider gpt -source Japanese -target Thai
+  lingo inject -path ./MyGame -workspace ./project.nst -dest ./MyGame_Translated
+  lingo deploy -path ./MyGame -workspace ./project.nst
+  lingo publish -path ./MyGame -slug my-game-slug
+  lingo mcp`)
 }
 
 func handleExtract(args []string) {
 	fs := flag.NewFlagSet("extract", flag.ExitOnError)
-	gamePath := fs.String("path", "", "Path to game root directory (required)")
-	wsPath := fs.String("workspace", "", "Output .nst workspace file (defaults to ~/.nst/<game_name>.nst)")
-	srcLang := fs.String("source-lang", "Japanese", "Source language")
-	tgtLang := fs.String("target-lang", "Thai", "Target language")
-	engineFlag := fs.String("engine", "", "Game engine (optional: rpgm, renpy, godot, unity)")
+	var gamePath string
+	var wsPath string
+	var srcLang string
+	var tgtLang string
+	var engineFlag string
+
+	fs.StringVar(&gamePath, "path", "", "Path to game root directory (required)")
+	fs.StringVar(&gamePath, "p", "", "Path to game root directory (shorthand)")
+	fs.StringVar(&wsPath, "workspace", "", "Output .nst workspace file (defaults to ~/.lingo/<game_name>.nst)")
+	fs.StringVar(&wsPath, "output", "", "Output .nst workspace file (alias)")
+	fs.StringVar(&wsPath, "o", "", "Output .nst workspace file (shorthand)")
+	fs.StringVar(&srcLang, "source-lang", "Japanese", "Source language")
+	fs.StringVar(&srcLang, "s", "Japanese", "Source language (shorthand)")
+	fs.StringVar(&tgtLang, "target-lang", "Thai", "Target language")
+	fs.StringVar(&tgtLang, "t", "Thai", "Target language (shorthand)")
+	fs.StringVar(&engineFlag, "engine", "", "Game engine (optional: rpgm, renpy, godot, unity)")
+	fs.StringVar(&engineFlag, "e", "", "Game engine (shorthand)")
 	fs.Parse(args)
 
-	if *gamePath == "" {
-		fmt.Println("Error: -path is required")
+	if gamePath == "" {
+		fmt.Println("Error: -path (or -p) is required")
 		fs.Usage()
 		os.Exit(1)
 	}
 
-	resolvedWs := app.ResolveWorkspacePath(*wsPath, *gamePath)
-	ws, stats, err := app.CreateFromGame(*gamePath, resolvedWs, *srcLang, *tgtLang, *engineFlag)
+	resolvedWs := app.ResolveWorkspacePath(wsPath, gamePath)
+	ws, stats, err := app.CreateFromGame(gamePath, resolvedWs, srcLang, tgtLang, engineFlag)
 	if err != nil {
 		fmt.Printf("Extraction failed: %v\n", err)
 		os.Exit(1)
@@ -177,9 +204,13 @@ func handleExtract(args []string) {
 
 func handleTranslate(args []string) {
 	fs := flag.NewFlagSet("translate", flag.ExitOnError)
-	wsPath := fs.String("workspace", "", "Path to .nst workspace file (or game name in ~/.nst/)")
+	wsPath := fs.String("workspace", "", "Path to .nst workspace file (or game name in ~/.lingo/)")
 	providerName := fs.String("provider", "mock", "Provider: mock, gemini, openai, google, or custom (e.g. gpt)")
-	apiKey := fs.String("api-key", os.Getenv("NST_API_KEY"), "API Key (or env NST_API_KEY)")
+	envKey := os.Getenv("LINGO_API_KEY")
+	if envKey == "" {
+		envKey = os.Getenv("NST_API_KEY") // legacy fallback
+	}
+	apiKey := fs.String("api-key", envKey, "API Key (or env LINGO_API_KEY)")
 	modelName := fs.String("model", "", "Model name (e.g. gemini-2.5-flash, gpt-4o-mini, deepseek-v4-pro-0813)")
 	baseURL := fs.String("base-url", "", "Custom Base URL for OpenAI/Ollama")
 	srcLang := fs.String("source", "Japanese", "Source language")
@@ -275,7 +306,7 @@ func handleTranslate(args []string) {
 func handleInject(args []string) {
 	fs := flag.NewFlagSet("inject", flag.ExitOnError)
 	gamePath := fs.String("path", "", "Path to game root directory (required)")
-	wsPath := fs.String("workspace", "", "Path to .nst workspace file (defaults to ~/.nst/<game_name>.nst)")
+	wsPath := fs.String("workspace", "", "Path to .nst workspace file (defaults to ~/.lingo/<game_name>.nst)")
 	destPath := fs.String("dest", "", "Destination path for patched game (required)")
 	fs.Parse(args)
 
@@ -307,7 +338,7 @@ func handleInject(args []string) {
 func handleDeploy(args []string) {
 	fs := flag.NewFlagSet("deploy", flag.ExitOnError)
 	gamePath := fs.String("path", "", "Path to game root directory (required)")
-	wsPath := fs.String("workspace", "", "Path to .nst workspace file (defaults to ~/.nst/<game_name>.nst)")
+	wsPath := fs.String("workspace", "", "Path to .nst workspace file (defaults to ~/.lingo/<game_name>.nst)")
 	langName := fs.String("lang", "Thai", "Display name of translated language")
 	fs.Parse(args)
 
@@ -339,11 +370,11 @@ func handleDeploy(args []string) {
 	fmt.Println("✅ Deployment completed successfully!")
 	fmt.Printf("   Target: %s\n", *gamePath)
 	if engine == "renpy" {
-		fmt.Printf("   Layer : %s/game/tl/%s/ (00_nst_font_layer.rpy, script.rpy, screens.rpy)\n", *gamePath, *langName)
+		fmt.Printf("   Layer : %s/game/tl/%s/ (00_lingo_font_layer.rpy, script.rpy, screens.rpy)\n", *gamePath, *langName)
 		fmt.Printf("   Fonts : %s/game/fonts/ (Zero-tofu embedded fonts)\n", *gamePath)
 	} else {
-		fmt.Printf("   Layer : %s/js/plugins/NST_TranslationLayer.js\n", *gamePath)
-		fmt.Printf("   Files : %s/nst_translations/\n", *gamePath)
+		fmt.Printf("   Layer : %s/js/plugins/Lingo_TranslationLayer.js\n", *gamePath)
+		fmt.Printf("   Files : %s/lingo_translations/\n", *gamePath)
 	}
 	fmt.Println("------------------------------------------")
 }
@@ -351,7 +382,7 @@ func handleDeploy(args []string) {
 func handleMerge(args []string) {
 	fs := flag.NewFlagSet("merge", flag.ExitOnError)
 	newGamePath := fs.String("new-game", "", "Path to new/updated game folder (required)")
-	wsPath := fs.String("workspace", "", "Path to existing .nst workspace (defaults to ~/.nst/<game_name>.nst)")
+	wsPath := fs.String("workspace", "", "Path to existing .nst workspace (defaults to ~/.lingo/<game_name>.nst)")
 	fs.Parse(args)
 
 	if *newGamePath == "" {
@@ -387,7 +418,7 @@ func handleMerge(args []string) {
 
 func handleStatus(args []string) {
 	fs := flag.NewFlagSet("status", flag.ExitOnError)
-	wsPath := fs.String("workspace", "", "Path to .nst workspace file (or game name in ~/.nst/)")
+	wsPath := fs.String("workspace", "", "Path to .nst workspace file (or game name in ~/.lingo/)")
 	fs.Parse(args)
 
 	resolvedWs := app.ResolveWorkspacePath(*wsPath)
@@ -450,7 +481,7 @@ func handleProviders(args []string) {
 	providers := app.ListAvailableProviders()
 
 	fmt.Println("================================================================================")
-	fmt.Println("NST Translation Providers (Built-in & Custom External Plugins)")
+	fmt.Println("Lingo Translation Providers (Built-in & Custom External Plugins)")
 	fmt.Println("================================================================================")
 
 	for _, p := range providers {
@@ -467,24 +498,24 @@ func handleProviders(args []string) {
 
 	fmt.Println("--------------------------------------------------------------------------------")
 	fmt.Println("💡 To add a new external provider securely without git exposure:")
-	fmt.Println("   Place a JSON config in ~/.nst/providers/<name>.json (recommended) or ~/.config/nst/providers/")
+	fmt.Println("   Place a JSON config in ~/.lingo/providers/<name>.json (recommended) or ~/.config/lingo/providers/")
 	fmt.Println("================================================================================")
 }
 
 func handleApp(args []string) {
-	// 1. Prefer native Wails desktop application if nst-desktop binary exists
+	// 1. Prefer native Wails desktop application if lingo-desktop binary exists
 	execPath, _ := os.Executable()
 	execDir := filepath.Dir(execPath)
 
 	candidates := []string{
-		filepath.Join(execDir, "nst-desktop"),
-		filepath.Join(".", "bin", "nst-desktop"),
-		filepath.Join(".", "nst-desktop"),
+		filepath.Join(execDir, "lingo-desktop"),
+		filepath.Join(".", "bin", "lingo-desktop"),
+		filepath.Join(".", "lingo-desktop"),
 	}
 
 	for _, c := range candidates {
 		if fi, err := os.Stat(c); err == nil && !fi.IsDir() && (fi.Mode()&0111 != 0) {
-			fmt.Printf("🚀 Launching Native NST Desktop GUI (%s)...\n", c)
+			fmt.Printf("🚀 Launching Native Lingo Desktop GUI (%s)...\n", c)
 			cmd := exec.Command(c, args...)
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
@@ -538,11 +569,11 @@ func handlePublish(args []string) {
 	fs := flag.NewFlagSet("publish", flag.ExitOnError)
 	wsPath := fs.String("workspace", "", "Path to .nst workspace file")
 	patchPath := fs.String("patch", "", "Path to .patch.json.gz distribution package")
-	gamePath := fs.String("path", "", "Legacy path to game folder containing nst_translations/")
+	gamePath := fs.String("path", "", "Legacy path to game folder containing lingo_translations/")
 	slug := fs.String("slug", "", "Chanomhub game article slug (optional if stored in workspace)")
 	token := fs.String("token", "", "Chanomhub API token (defaults to CHANOMHUB_TOKEN or saved login)")
 	lang := fs.String("lang", "", "Target language name")
-	credit := fs.String("credit", "NST", "Credit to translator/group")
+	credit := fs.String("credit", "Lingo Translate", "Credit to translator/group")
 	apiBase := fs.String("api-base", "", "Custom API base URL (defaults to saved registry)")
 	storageURL := fs.String("storage-url", "", "Custom storage URL (defaults to saved storage URL)")
 	fs.Parse(args)
@@ -559,7 +590,7 @@ func handlePublish(args []string) {
 	}
 	if effectiveToken == "" {
 		fmt.Println("Error: Authentication required to publish translation mods.")
-		fmt.Println("Please run 'nst login' to authenticate, or provide -token / CHANOMHUB_TOKEN.")
+		fmt.Println("Please run 'lingo login' to authenticate, or provide -token / CHANOMHUB_TOKEN.")
 		os.Exit(1)
 	}
 
@@ -742,7 +773,7 @@ func handleWhoami(args []string) {
 	ctx := context.Background()
 	info, apiBase, err := chanomhub.Whoami(ctx)
 	if err != nil {
-		fmt.Printf("Not logged in to Chanomhub. Run 'nst login' to authenticate.\n")
+		fmt.Printf("Not logged in to Chanomhub. Run 'lingo login' to authenticate.\n")
 		os.Exit(1)
 	}
 
@@ -1033,8 +1064,8 @@ func handleStyles(args []string) {
 	fmt.Println("--------------------------------------------------------------------------------")
 	fmt.Println("📁 Custom Template Files:")
 	fmt.Println("   Place custom templates in './templates/<name>.txt' or pass a path:")
-	fmt.Println("   Example: nst translate -workspace game.nst -provider maxplus -style nsfw")
-	fmt.Println("   Example: nst translate -workspace game.nst -provider maxplus -style ./templates/my_style.txt")
+	fmt.Println("   Example: lingo translate -workspace game.nst -provider maxplus -style nsfw")
+	fmt.Println("   Example: lingo translate -workspace game.nst -provider maxplus -style ./templates/my_style.txt")
 }
 
 

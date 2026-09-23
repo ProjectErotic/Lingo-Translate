@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"nst-go/pkg/model"
-	"nst-go/pkg/parser"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/parser"
 )
 
 // PatchPackage represents a lightweight, portable distribution mod package (.patch.json or .patch.json.gz)

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
 // Inject applies translated text entries back into the game files

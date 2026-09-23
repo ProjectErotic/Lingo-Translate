@@ -72,7 +72,7 @@ func GetTemplateSearchDirs() []string {
 		dirs = append(dirs, filepath.Join(homeDir, ".nst"))
 	}
 	if cfgDir, err := os.UserConfigDir(); err == nil {
-		dirs = append(dirs, filepath.Join(cfgDir, "nst", "templates"))
+		dirs = append(dirs, filepath.Join(cfgDir, "lingo", "templates"))
 	}
 	dirs = append(dirs, "templates")
 	return dirs

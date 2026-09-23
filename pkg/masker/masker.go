@@ -38,7 +38,7 @@ var rpgmControlRegex = regexp.MustCompile(`(?i)(` +
 type MaskResult struct {
 	OriginalText string
 	MaskedText   string
-	TagMap       map[string]string // Tag (e.g. "__NST_TAG_0__") -> Code (e.g. "\C[1]")
+	TagMap       map[string]string // Tag (e.g. "__LINGO_TAG_0__") -> Code (e.g. "\C[1]")
 }
 
 // Mask replaces control codes in source text with safe placeholders that LLMs won't translate
@@ -65,7 +65,7 @@ func Mask(sourceText string) MaskResult {
 		}
 
 		if !alreadyMapped {
-			tag := fmt.Sprintf("__NST_TAG_%d__", tagIndex)
+			tag := fmt.Sprintf("__LINGO_TAG_%d__", tagIndex)
 			tagIndex++
 			tagMap[tag] = code
 		}
@@ -97,12 +97,12 @@ func Unmask(translatedText string, tagMap map[string]string) string {
 		result = strings.ReplaceAll(result, tag, originalCode)
 	}
 
-	// 2. Fuzzy recovery for common LLM mutations: "__ NST_TAG_0 __" or "__nst_tag_0__"
+	// 2. Fuzzy recovery for common LLM mutations: "__ LINGO_TAG_0 __" or "__nst_tag_0__"
 	for tag, originalCode := range tagMap {
 		// If tag still remains un-restored due to slight formatting changes
 		numMatch := regexp.MustCompile(`\d+`).FindString(tag)
 		if numMatch != "" {
-			fuzzyPattern := regexp.MustCompile(fmt.Sprintf(`(?i)__\s*NST_TAG_%s\s*__`, numMatch))
+			fuzzyPattern := regexp.MustCompile(fmt.Sprintf(`(?i)__\s*(?:LINGO|NST)_TAG_%s\s*__`, numMatch))
 			result = fuzzyPattern.ReplaceAllString(result, originalCode)
 		}
 	}

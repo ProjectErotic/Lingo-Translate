@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
 func TestInjectionDeploy(t *testing.T) {
@@ -57,18 +57,18 @@ var $plugins =
 	}
 
 	// 1. Verify config.json exists
-	configPath := filepath.Join(tempGame, "nst_translations", "config.json")
+	configPath := filepath.Join(tempGame, "lingo_translations", "config.json")
 	if _, err := os.Stat(configPath); err != nil {
 		t.Fatalf("config.json missing: %v", err)
 	}
 
-	// 2. Verify Map001.json and Map001.txt exist in nst_translations/
-	jsonPath := filepath.Join(tempGame, "nst_translations", "Map001.json")
+	// 2. Verify Map001.json and Map001.txt exist in lingo_translations/
+	jsonPath := filepath.Join(tempGame, "lingo_translations", "Map001.json")
 	if _, err := os.Stat(jsonPath); err != nil {
 		t.Fatalf("Map001.json missing: %v", err)
 	}
 
-	txtPath := filepath.Join(tempGame, "nst_translations", "Map001.txt")
+	txtPath := filepath.Join(tempGame, "lingo_translations", "Map001.txt")
 	txtBytes, err := os.ReadFile(txtPath)
 	if err != nil {
 		t.Fatalf("Failed to read Map001.txt: %v", err)
@@ -77,17 +77,17 @@ var $plugins =
 		t.Errorf("Map001.txt does not contain expected translation block:\n%s", string(txtBytes))
 	}
 
-	// 3. Verify NST_TranslationLayer.js was installed in plugins/
-	pluginPath := filepath.Join(pluginsDir, "NST_TranslationLayer.js")
+	// 3. Verify Lingo_TranslationLayer.js was installed in plugins/
+	pluginPath := filepath.Join(pluginsDir, "Lingo_TranslationLayer.js")
 	fi, err := os.Stat(pluginPath)
 	if err != nil || fi.Size() == 0 {
-		t.Fatalf("NST_TranslationLayer.js was not copied properly, size: %v", fi)
+		t.Fatalf("Lingo_TranslationLayer.js was not copied properly, size: %v", fi)
 	}
 
 	// 4. Verify plugins.js was patched
 	patchedJsBytes, _ := os.ReadFile(filepath.Join(tempGame, "js", "plugins.js"))
-	if !strings.Contains(string(patchedJsBytes), `"name":"NST_TranslationLayer"`) {
-		t.Fatalf("plugins.js was not patched with NST_TranslationLayer: %s", string(patchedJsBytes))
+	if !strings.Contains(string(patchedJsBytes), `"name":"Lingo_TranslationLayer"`) {
+		t.Fatalf("plugins.js was not patched with Lingo_TranslationLayer: %s", string(patchedJsBytes))
 	}
 
 	// 5. CRITICAL: Verify original data/Map001.json is NOT modified (Non-Destructive!)

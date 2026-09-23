@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nst-go/pkg/model"
-	"nst-go/pkg/storage"
-	"nst-go/pkg/translator"
-	"nst-go/pkg/translator/mock"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/storage"
+	"lingo-translate/pkg/translator"
+	"lingo-translate/pkg/translator/mock"
 )
 
 func TestPipelineExecution(t *testing.T) {

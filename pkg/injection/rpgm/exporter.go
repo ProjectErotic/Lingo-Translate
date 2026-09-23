@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
-//go:embed assets/NST_TranslationLayer.js
+//go:embed assets/Lingo_TranslationLayer.js
 var pluginScriptContent []byte
 
 type DeployOptions struct {
@@ -28,7 +28,7 @@ func NewExporter() *Exporter {
 	return &Exporter{}
 }
 
-// Deploy creates the nst_translations directory, exports dictionary files, copies the runtime plugin, and patches plugins.js
+// Deploy creates the lingo_translations directory, exports dictionary files, copies the runtime plugin, and patches plugins.js
 func (e *Exporter) Deploy(gamePath string, entries []model.TextEntry, opts DeployOptions) error {
 	if opts.LanguageName == "" {
 		opts.LanguageName = "Thai"
@@ -38,9 +38,9 @@ func (e *Exporter) Deploy(gamePath string, entries []model.TextEntry, opts Deplo
 	}
 
 	// 1. Locate translation directories (support both root and www/ for NW.js)
-	transDirs := []string{filepath.Join(gamePath, "nst_translations")}
+	transDirs := []string{filepath.Join(gamePath, "lingo_translations")}
 	if fi, err := os.Stat(filepath.Join(gamePath, "www")); err == nil && fi.IsDir() {
-		transDirs = append(transDirs, filepath.Join(gamePath, "www", "nst_translations"))
+		transDirs = append(transDirs, filepath.Join(gamePath, "www", "lingo_translations"))
 	}
 
 	// Group entries by base filename (e.g. "Map001.json" -> "Map001")
@@ -67,18 +67,18 @@ func (e *Exporter) Deploy(gamePath string, entries []model.TextEntry, opts Deplo
 		}
 	}
 
-	// 5. Install NST_TranslationLayer.js into plugins directory
+	// 5. Install Lingo_TranslationLayer.js into plugins directory
 	pluginDir, err := e.findPluginDir(gamePath)
 	if err != nil {
 		return fmt.Errorf("failed to locate plugin directory: %w", err)
 	}
 
-	pluginDest := filepath.Join(pluginDir, "NST_TranslationLayer.js")
+	pluginDest := filepath.Join(pluginDir, "Lingo_TranslationLayer.js")
 	if err := os.WriteFile(pluginDest, pluginScriptContent, 0644); err != nil {
-		return fmt.Errorf("failed to write NST_TranslationLayer.js: %w", err)
+		return fmt.Errorf("failed to write Lingo_TranslationLayer.js: %w", err)
 	}
 
-	// 6. Patch plugins.js to auto-register NST_TranslationLayer
+	// 6. Patch plugins.js to auto-register Lingo_TranslationLayer
 	_ = e.patchPluginsJs(gamePath)
 
 	return nil
@@ -211,11 +211,11 @@ func (e *Exporter) patchPluginsJs(gamePath string) error {
 	}
 
 	content := string(contentBytes)
-	if strings.Contains(content, "NST_TranslationLayer") {
+	if strings.Contains(content, "Lingo_TranslationLayer") {
 		return nil // Already patched
 	}
 
-	entry := `{"name":"NST_TranslationLayer","status":true,"description":"NST Translation Layer (Auto-Injected)","parameters":{}}`
+	entry := `{"name":"Lingo_TranslationLayer","status":true,"description":"Lingo Translation Layer (Auto-Injected)","parameters":{}}`
 
 	closeBracket := strings.LastIndex(content, "];")
 	if closeBracket < 0 {

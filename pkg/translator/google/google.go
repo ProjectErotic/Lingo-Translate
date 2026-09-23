@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"nst-go/pkg/translator"
+	"lingo-translate/pkg/translator"
 )
 
 type Config struct {

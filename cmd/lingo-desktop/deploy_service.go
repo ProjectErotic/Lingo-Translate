@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"nst-go/pkg/app"
-	"nst-go/pkg/merger"
-	"nst-go/pkg/plugins/chanomhub"
+	"lingo-translate/pkg/app"
+	"lingo-translate/pkg/merger"
+	"lingo-translate/pkg/plugins/chanomhub"
 )
 
 type DeployService struct {

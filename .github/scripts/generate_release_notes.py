@@ -246,7 +246,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate release notes from git commits.")
     parser.add_argument("--current-tag", default="", help="Current tag or commit (defaults to latest tag/HEAD)")
     parser.add_argument("--prev-tag", default="", help="Previous tag (auto-detected if omitted)")
-    parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY", ""), help="GitHub repo owner/name (e.g. NST-Ghost/NST-V2)")
+    parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY", ""), help="GitHub repo owner/name (e.g. ProjectErotic/Lingo-Translate)")
     parser.add_argument("--output", default="release_notes.md", help="Output file path")
     args = parser.parse_args()
 

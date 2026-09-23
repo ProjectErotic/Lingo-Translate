@@ -4,11 +4,11 @@
         <key>CFBundlePackageType</key>
             <string>APPL</string>
         <key>CFBundleName</key>
-            <string>My Product</string>
+            <string>Lingo Translate</string>
         <key>CFBundleExecutable</key>
-            <string>nst-desktop</string>
+            <string>lingo-desktop</string>
         <key>CFBundleIdentifier</key>
-            <string>com.example.nstdesktop</string>
+            <string>com.projecterotic.lingo</string>
         <key>CFBundleVersion</key>
             <string>0.1.0</string>
         <key>CFBundleGetInfoString</key>

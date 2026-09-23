@@ -11,8 +11,8 @@ import {
 import {
   DeployService,
   SettingsService,
-} from "@bindings/nst-go/cmd/nst-desktop";
-import type { PublishResult } from "@bindings/nst-go/pkg/plugins/chanomhub";
+} from "@bindings/lingo-translate/cmd/lingo-desktop";
+import type { PublishResult } from "@bindings/lingo-translate/pkg/plugins/chanomhub";
 import { toast } from "sonner";
 import { Share2, Loader2, ExternalLink } from "lucide-react";
 
@@ -80,7 +80,7 @@ export const PublishDialog: React.FC<PublishDialogProps> = ({
 
         <div className="space-y-4 py-2 text-sm">
           <p className="text-xs text-muted-foreground">
-            Automatically packages <code className="text-primary font-mono">nst_translations/</code> into a zip archive and uploads it directly to Chanomhub mod moderation.
+            Automatically packages <code className="text-primary font-mono">lingo_translations/</code> into a zip archive and uploads it directly to Chanomhub mod moderation.
           </p>
 
           <div>

@@ -1,40 +1,40 @@
 /*:
  * @target MV MZ
- * @plugindesc NST Translation Layer v1.0 — Drop-in runtime translation.
- * @author NST
+ * @plugindesc Lingo Translation Layer v1.0 — Drop-in runtime translation.
+ * @author ProjectErotic / Lingo
  *
  * @help
  * ============================================================================
- * NST Translation Layer
+ * Lingo Translation Layer
  * ============================================================================
  *
  * Drop-in translation for RPG Maker MV/MZ games.
  * Works on: NW.js (PC), JoiPlay (Android), Browser, Linux, Mac
  *
- * This plugin reads translations from a nst_translations/ folder placed
+ * This plugin reads translations from a lingo_translations/ folder placed
  * at the game root, and hooks the RPG Maker runtime to translate text
  * on-the-fly WITHOUT modifying the original game data files.
  *
  * Layout:
  *   [Game root]/
- *   ├── nst_translations/
+ *   ├── lingo_translations/
  *   │   ├── config.json        (hooks, patterns, font, sourceLocale)
  *   │   ├── Actors.json        (one file per game data file)
  *   │   ├── Map001.json
  *   │   └── System.json
  *   └── js/plugins/
- *       └── NST_TranslationLayer.js   (this file)
+ *       └── Lingo_TranslationLayer.js   (this file)
  *
  * HOW TO USE:
- *   1. Copy this file to: [Game]/js/plugins/NST_TranslationLayer.js
- *   2. Copy nst_translations/ folder to: [Game]/nst_translations/
- *   3. Add "NST_TranslationLayer" to plugins.js (or use the provided main.js)
+ *   1. Copy this file to: [Game]/js/plugins/Lingo_TranslationLayer.js
+ *   2. Copy lingo_translations/ folder to: [Game]/lingo_translations/
+ *   3. Add "Lingo_TranslationLayer" to plugins.js (or use the provided main.js)
  *   4. Play the game — translations work automatically
  *
  * Debug (F12 console):
- *   NST.TL.stats()     // show entry counts
- *   NST.TL.reload()    // reload translations
- *   NST.TL.missed()    // list untranslated source-locale text
+ *   Lingo.TL.stats()     // show entry counts
+ *   Lingo.TL.reload()    // reload translations
+ *   Lingo.TL.missed()    // list untranslated source-locale text
  *
  * ============================================================================
  */
@@ -6141,7 +6141,7 @@
 	 * Uses an alert popup for maximum compatibility, then throws.
 	 */
 	function showError(name, message) {
-	  var fullMessage = "[NST] " + name + "\n" + message;
+	  var fullMessage = "[Lingo] " + name + "\n" + message;
 	  // Always emit to console.
 	  console.error(fullMessage);
 	  // Attempt to stop the game cleanly.
@@ -6149,7 +6149,7 @@
 	  // Show the error via alert.
 	  if (typeof alert === "function") {
 	    try {
-	      alert("[NST] " + name + "\n\n" + message);
+	      alert("[Lingo] " + name + "\n\n" + message);
 	    } catch (_) {
 	      // Ignore alert failures.
 	    }
@@ -6161,7 +6161,7 @@
 	 * Does not abort execution; only writes to the console.
 	 */
 	function showWarning(name, message) {
-	  var fullMessage = "[NST Warning] " + name + "\n" + message;
+	  var fullMessage = "[Lingo Warning] " + name + "\n" + message;
 	  console.warn(fullMessage);
 	}
 	// =============================================================================
@@ -6729,7 +6729,7 @@
 	function createLogger() {
 	  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 	  var currentLevel = options.level || 'info';
-	  var prefix = options.name ? `[${options.name}]` : '[NST]';
+	  var prefix = options.name ? `[${options.name}]` : '[Lingo]';
 	  function shouldLog(level) {
 	    return LOG_LEVELS[level] >= LOG_LEVELS[currentLevel];
 	  }
@@ -6879,7 +6879,7 @@
 	  style.type = "text/css";
 	  style.appendChild(document.createTextNode('@font-face { font-family: "' + escapeCssString(config.fontName) + '"; src: url("' + escapeCssString(fontUrl) + '"); }'));
 	  document.head.appendChild(style);
-	  log$3.info("[NST] Registered font via CSS @font-face:", config.fontName, fontUrl);
+	  log$3.info("[Lingo] Registered font via CSS @font-face:", config.fontName, fontUrl);
 	  refreshAllWindows();
 	}
 	// ============================================
@@ -6955,7 +6955,7 @@
 	    // Method 1: FontManager.load (RPG Maker MZ built-in).
 	    if (FM && FM.load) {
 	      FM.load(config.fontName, fileName);
-	      log$3.info("[NST] MZ FontManager.load invoked:", config.fontName, fileName);
+	      log$3.info("[Lingo] MZ FontManager.load invoked:", config.fontName, fileName);
 	    }
 	    // Method 2: FontFace API or CSS @font-face fallback.
 	    var fontUrl = config.fontUrl;
@@ -6968,7 +6968,7 @@
 	          showWarning("字体加载失败", "无法加载字体\n" + "字体名称: " + config.fontName + "\n" + "文件名: " + fileName + "\n" + "错误信息: " + errorMsg);
 	        }, 0);
 	      });
-	      log$3.info("[NST] MZ FontFace API added:", config.fontName, fontUrl);
+	      log$3.info("[Lingo] MZ FontFace API added:", config.fontName, fontUrl);
 	    } else {
 	      addFontFaceStyle(config, fontUrl);
 	    }
@@ -7058,7 +7058,7 @@
 	function installHooks() {
 	  if (hooksInstalled) return;
 	  if (typeof Scene_Boot === "undefined" || Scene_Boot === null) {
-	    console.warn("[NST] Scene_Boot undefined; cannot install font hooks");
+	    console.warn("[Lingo] Scene_Boot undefined; cannot install font hooks");
 	    return;
 	  }
 	  hooksInstalled = true;
@@ -7066,7 +7066,7 @@
 	  // MZ-specific API hooks
 	  // ============================================
 	  if (isMZ()) {
-	    log$3.info("[NST] Detected MZ; installing MZ font hooks");
+	    log$3.info("[Lingo] Detected MZ; installing MZ font hooks");
 	    // MZ: Game_System.prototype.mainFontFace
 	    if (typeof Game_System !== "undefined" && Game_System.prototype.mainFontFace) {
 	      var _Game_System_mainFontFace = Game_System.prototype.mainFontFace;
@@ -7097,17 +7097,17 @@
 	    Scene_Boot.prototype.loadGameFonts = function () {
 	      _Scene_Boot_loadGameFonts.call(this);
 	      loadCustomFont();
-	      log$3.info("[NST] MZ font load hook executed");
+	      log$3.info("[Lingo] MZ font load hook executed");
 	    };
 	    // Note: we no longer block isReady; font loading happens in the background.
 	    // If font loading fails, showError reports it explicitly.
-	    log$3.info("[NST] MZ font hooks installed");
+	    log$3.info("[Lingo] MZ font hooks installed");
 	  }
 	  // ============================================
 	  // MV-specific API hooks
 	  // ============================================
 	  if (isMV()) {
-	    log$3.info("[NST] Detected MV; installing MV font hooks");
+	    log$3.info("[Lingo] Detected MV; installing MV font hooks");
 	    // MV: Window_Base.prototype.standardFontFace
 	    if (typeof Window_Base !== "undefined" && Window_Base.prototype.standardFontFace) {
 	      var _Window_Base_standardFontFace = Window_Base.prototype.standardFontFace;
@@ -7138,10 +7138,10 @@
 	    Scene_Boot.prototype.create = function () {
 	      _Scene_Boot_create.call(this);
 	      loadCustomFont();
-	      log$3.info("[NST] MV font load hook executed");
+	      log$3.info("[Lingo] MV font load hook executed");
 	    };
 	    // Note: we no longer block isReady; font loading happens in the background.
-	    log$3.info("[NST] MV font hooks installed");
+	    log$3.info("[Lingo] MV font hooks installed");
 	  }
 	}
 	// ============================================
@@ -7174,7 +7174,7 @@
 	  if (fontConfig) {
 	    customFontConfig = fontConfig;
 	  }
-	  log$3.info("[NST] Font config initialized");
+	  log$3.info("[Lingo] Font config initialized");
 	  installHooks();
 	}
 	// ============================================
@@ -7190,11 +7190,11 @@
 	  return _loadedFontConfig;
 	}
 
-	// default-config.ts — Default configuration for the NST Translation Layer.
+	// default-config.ts — Default configuration for the Lingo Translation Layer.
 	//
 	// This module provides the default config object that is used when the game's
-	// nst_translations/config.json is missing or incomplete. It mirrors the
-	// hardcoded hooks from the legacy NST_TranslationLayer.js so that the new
+	// lingo_translations/config.json is missing or incomplete. It mirrors the
+	// hardcoded hooks from the legacy Lingo_TranslationLayer.js so that the new
 	// config-driven system produces identical behaviour out of the box.
 	//
 	// The config structure matches the schema in json-loader.ts.
@@ -7335,7 +7335,7 @@
 	// =============================================================================
 	/**
 	 * The full default configuration. This is merged with (or used in place of)
-	 * the user's nst_translations/config.json when fields are missing.
+	 * the user's lingo_translations/config.json when fields are missing.
 	 */
 	var DEFAULT_CONFIG = {
 	  __customHooks__: DEFAULT_CUSTOM_HOOKS,
@@ -7553,7 +7553,7 @@
 	 *   │   └── index.html
 	 *   └── Game.exe
 	 *
-	 * We look for nst_translations/ relative to the game root.
+	 * We look for lingo_translations/ relative to the game root.
 	 */
 	function getBasePath() {
 	  // Try Node.js path resolution if running inside NW.js or Electron
@@ -7709,9 +7709,9 @@
 	 */
 	function loadTranslationFile(fileName) {
 	  if (_loadedFiles[fileName]) return 0;
-	  var txt = readFileSync("nst_translations/" + fileName + ".json");
+	  var txt = readFileSync("lingo_translations/" + fileName + ".json");
 	  if (txt === null) return 0;
-	  var parsed = loadJsonSync("nst_translations/" + fileName + ".json", TranslationsSchema);
+	  var parsed = loadJsonSync("lingo_translations/" + fileName + ".json", TranslationsSchema);
 	  if (parsed.isErr()) {
 	    log$2.warn("Failed to load " + fileName + ".json: " + parsed.error);
 	    return 0;
@@ -7732,7 +7732,7 @@
 	 * This is the primary initialization entry point.
 	 */
 	function loadAll() {
-	  var loadedConfigResult = loadJsonSync("nst_translations/config.json", z.custom(function (val) {
+	  var loadedConfigResult = loadJsonSync("lingo_translations/config.json", z.custom(function (val) {
 	    return val;
 	  }));
 	  var loadedConfig = unwrap(loadedConfigResult, "Config Load Failed");
@@ -7757,11 +7757,11 @@
 	      totalEntries += loadTranslationFile(dbFile);
 	    }
 	  }
-	  // On NW.js, scan the nst_translations/ directory for any additional .json files.
+	  // On NW.js, scan the lingo_translations/ directory for any additional .json files.
 	  if (typeof require !== "undefined") {
 	    try {
 	      var fs = require("fs");
-	      var dir = toLocalPath(getBasePath() + "/nst_translations/");
+	      var dir = toLocalPath(getBasePath() + "/lingo_translations/");
 	      if (fs.existsSync(dir)) {
 	        var all = fs.readdirSync(dir);
 	        for (var j = 0; j < all.length; j++) {
@@ -8766,8 +8766,8 @@
 	              var outObj = {};
 	              state.missed.forEach(function(cnt, k) { outObj[k] = k; });
 	              var candidates = [
-	                path.join(process.cwd(), "nst_translations"),
-	                path.join(process.cwd(), "www", "nst_translations")
+	                path.join(process.cwd(), "lingo_translations"),
+	                path.join(process.cwd(), "www", "lingo_translations")
 	              ];
 	              candidates.forEach(function(cDir) {
 	                if (fs.existsSync(cDir)) {
@@ -9293,11 +9293,11 @@
 	var _global = typeof window !== "undefined" ? window : typeof self !== "undefined" ? self : Function("return this")();
 	_global["Translator"] = Translator;
 
-	// main.ts — NST Translation Layer plugin entry.
+	// main.ts — Lingo Translation Layer plugin entry.
 	// Supports RPG Maker MV/MZ.
 	//
 	// This file is the IIFE entry that Rollup bundles into a single
-	// NST_TranslationLayer.js file for dropping into js/plugins/.
+	// Lingo_TranslationLayer.js file for dropping into js/plugins/.
 	var log = pino({
 	  level: "info"
 	});
@@ -9340,8 +9340,8 @@
 	// =============================================================================
 	// Public Debug API (F12 console)
 	// =============================================================================
-	window.NST = window.NST || {};
-	window.NST.TL = {
+	window.Lingo = window.Lingo || {};
+	window.Lingo.TL = {
 	  /**
 	   * Translate a string (same as the internal pipeline).
 	   */
@@ -9359,7 +9359,7 @@
 	   */
 	  stats: function stats() {
 	    var s = Translator.stats();
-	    console.log("[NST] === Translation Stats ===");
+	    console.log("[Lingo] === Translation Stats ===");
 	    console.log("  Source entries: " + s.translations);
 	    console.log("  Cached: " + s.cached);
 	    console.log("  Missed: " + s.missed);
@@ -9373,7 +9373,7 @@
 	   */
 	  missed: function missed() {
 	    var missed = Translator.getMissed();
-	    console.log("[NST] === Missed Translations (top 100) ===");
+	    console.log("[Lingo] === Missed Translations (top 100) ===");
 	    for (var i = 0; i < Math.min(missed.length, 100); i++) {
 	      console.log("  [" + i + "] " + missed[i]);
 	    }
@@ -9389,4 +9389,4 @@
 	};
 
 })();
-//# sourceMappingURL=NST_TranslationLayer.js.map
+//# sourceMappingURL=Lingo_TranslationLayer.js.map

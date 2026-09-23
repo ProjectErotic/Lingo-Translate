@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Lingo Translate
+Comment=Game Translation Suite
+Exec=sh -c 'cd "$(dirname "$1")" && ./lingo-desktop' dummy %k
+Icon=./icon.png
+Terminal=false
+Categories=Utility;Development;

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nst-go/pkg/translator"
+	"lingo-translate/pkg/translator"
 )
 
 func TestCustomProviderLifecycle(t *testing.T) {

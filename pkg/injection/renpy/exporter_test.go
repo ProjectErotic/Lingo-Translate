@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
 func TestRenpyExporterDeploy(t *testing.T) {
@@ -69,8 +69,8 @@ screen preferences():
 		t.Errorf("expected embedded light font to be written to %s", lightFont)
 	}
 
-	// 2. Verify 00_nst_font_layer.rpy was created with translate Thai python:
-	fontLayerPath := filepath.Join(gameDir, "tl", "Thai", "00_nst_font_layer.rpy")
+	// 2. Verify 00_lingo_font_layer.rpy was created with translate Thai python:
+	fontLayerPath := filepath.Join(gameDir, "tl", "Thai", "00_lingo_font_layer.rpy")
 	fontContent, err := os.ReadFile(fontLayerPath)
 	if err != nil {
 		t.Fatalf("missing font layer script: %v", err)

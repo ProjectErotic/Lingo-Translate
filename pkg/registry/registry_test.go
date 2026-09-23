@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"nst-go/pkg/model"
-	"nst-go/pkg/storage"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/storage"
 )
 
 func TestProjectRegistry(t *testing.T) {

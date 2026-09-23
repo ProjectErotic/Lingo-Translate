@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=nst-desktop
-Exec=nst-desktop
-Icon=nst-desktop
+Name=lingo-desktop
+Exec=lingo-desktop
+Icon=lingo-desktop
 Categories=Development;
 Terminal=false
 Keywords=wails

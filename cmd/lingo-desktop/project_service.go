@@ -6,10 +6,10 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"nst-go/pkg/app"
-	"nst-go/pkg/model"
-	"nst-go/pkg/parser"
-	"nst-go/pkg/registry"
+	"lingo-translate/pkg/app"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/parser"
+	"lingo-translate/pkg/registry"
 )
 
 type ProjectService struct {
@@ -152,14 +152,14 @@ func (p *ProjectService) PickWorkspace(save bool) (string, error) {
 
 	if save {
 		dlg := wailsApp.Dialog.SaveFile()
-		dlg.SetMessage("Save NST Workspace File")
-		dlg.AddFilter("NST Workspace (*.nst)", "*.nst")
+		dlg.SetMessage("Save Lingo Workspace File")
+		dlg.AddFilter("Lingo Workspace (*.nst)", "*.nst")
 		return dlg.PromptForSingleSelection()
 	}
 
 	dlg := wailsApp.Dialog.OpenFile()
-	dlg.SetTitle("Open NST Workspace File")
-	dlg.AddFilter("NST Workspace (*.nst)", "*.nst")
+	dlg.SetTitle("Open Lingo Workspace File")
+	dlg.AddFilter("Lingo Workspace (*.nst)", "*.nst")
 	dlg.CanChooseFiles(true)
 	dlg.CanChooseDirectories(false)
 	return dlg.PromptForSingleSelection()

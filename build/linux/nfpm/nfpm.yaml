@@ -3,26 +3,26 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "nst-desktop"
+name: "lingo-desktop"
 arch: ${GOARCH}
 platform: "linux"
 version: "0.1.0"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
-description: "A nst-desktop application"
-vendor: "My Company"
+description: "Lingo Translate - Game Translation Suite"
+vendor: "ProjectErotic"
 homepage: "https://wails.io"
 license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/nst-desktop"
-    dst: "/usr/local/bin/nst-desktop"
+  - src: "./bin/lingo-desktop"
+    dst: "/usr/local/bin/lingo-desktop"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/nst-desktop.png"
-  - src: "./build/linux/nst-desktop.desktop"
-    dst: "/usr/share/applications/nst-desktop.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/lingo-desktop.png"
+  - src: "./build/linux/lingo-desktop.desktop"
+    dst: "/usr/share/applications/lingo-desktop.desktop"
 
 # Default dependencies for the GTK4 + WebKitGTK 6.0 stack (Ubuntu 24.04+ / Debian 13+)
 depends:

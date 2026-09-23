@@ -1,8 +1,8 @@
 import React from "react";
 
 // Regex matching NST masked tags and common RPG Maker / game escape codes
-const TOKEN_REGEX = /(__NST_TAG_\d+__|\\[A-Za-z]+\[[^\]]*\]|\\[!><|.^$%\\])/g;
-const SINGLE_LINE_TOKEN_REGEX = /(__NST_TAG_\d+__|\\[A-Za-z]+\[[^\]]*\]|\\[!><|.^$%\\]|\r\n|\r|\n)/g;
+const TOKEN_REGEX = /(__LINGO_TAG_\d+__|\\[A-Za-z]+\[[^\]]*\]|\\[!><|.^$%\\])/g;
+const SINGLE_LINE_TOKEN_REGEX = /(__LINGO_TAG_\d+__|\\[A-Za-z]+\[[^\]]*\]|\\[!><|.^$%\\]|\r\n|\r|\n)/g;
 
 export interface TokenizedTextProps {
   text: string;
@@ -47,9 +47,9 @@ export const TokenizedText: React.FC<TokenizedTextProps> = ({
           );
         }
 
-        if (part.startsWith("__NST_TAG_") && part.endsWith("__")) {
+        if (part.startsWith("__LINGO_TAG_") && part.endsWith("__")) {
           return (
-            <span key={index} className="nst-token select-all" title="NST Masked Tag">
+            <span key={index} className="lingo-token select-all" title="Lingo Masked Tag">
               {part}
             </span>
           );
@@ -57,7 +57,7 @@ export const TokenizedText: React.FC<TokenizedTextProps> = ({
 
         if (part.startsWith("\\")) {
           return (
-            <span key={index} className="nst-escape select-all" title="Game Engine Escape Code">
+            <span key={index} className="lingo-escape select-all" title="Game Engine Escape Code">
               {part}
             </span>
           );

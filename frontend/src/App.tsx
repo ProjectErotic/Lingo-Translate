@@ -3,9 +3,9 @@ import { HashRouter, Routes, Route, useNavigate, useLocation } from "react-route
 import {
   ProjectService,
   EntryService,
-} from "@bindings/nst-go/cmd/nst-desktop";
-import type { Project } from "@bindings/nst-go/pkg/model";
-import type { WorkspaceStats } from "@bindings/nst-go/pkg/storage";
+} from "@bindings/lingo-translate/cmd/lingo-desktop";
+import type { Project } from "@bindings/lingo-translate/pkg/model";
+import type { WorkspaceStats } from "@bindings/lingo-translate/pkg/storage";
 import { Menubar } from "@/components/layout/Menubar";
 import { Statusbar } from "@/components/layout/Statusbar";
 import { ProjectsPage } from "@/pages/ProjectsPage";
@@ -163,7 +163,7 @@ function AppContent() {
       },
       {
         id: "app.about",
-        title: "About NST",
+        title: "About Lingo Translate",
         category: "Help",
         keybinding: "F1",
         run: () => setAboutDialog(true),

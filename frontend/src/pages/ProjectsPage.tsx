@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import {
   ProjectService,
-} from "@bindings/nst-go/cmd/nst-desktop";
-import type { ProjectEntry } from "@bindings/nst-go/pkg/registry";
+} from "@bindings/lingo-translate/cmd/lingo-desktop";
+import type { ProjectEntry } from "@bindings/lingo-translate/pkg/registry";
 import {
   Button,
   Badge,

@@ -11,8 +11,8 @@ import {
 import {
   DeployService,
   ProjectService,
-} from "@bindings/nst-go/cmd/nst-desktop";
-import type { MergeStats } from "@bindings/nst-go/pkg/merger";
+} from "@bindings/lingo-translate/cmd/lingo-desktop";
+import type { MergeStats } from "@bindings/lingo-translate/pkg/merger";
 import { toast } from "sonner";
 import { GitMerge, FolderOpen, Loader2, CheckCircle2 } from "lucide-react";
 

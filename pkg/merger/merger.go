@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"nst-go/pkg/model"
-	"nst-go/pkg/parser"
-	"nst-go/pkg/storage"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/parser"
+	"lingo-translate/pkg/storage"
 )
 
 // MergeStats tracks the metrics of updating a project with a new game version

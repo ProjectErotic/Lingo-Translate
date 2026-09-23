@@ -1,4 +1,4 @@
-module nst-go
+module lingo-translate
 
 go 1.26.4
 

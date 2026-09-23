@@ -12,9 +12,9 @@ import {
 import {
   TranslationService,
   SettingsService,
-} from "@bindings/nst-go/cmd/nst-desktop";
-import type { TranslationDonePayload } from "@bindings/nst-go/cmd/nst-desktop";
-import type { TranslationProgress } from "@bindings/nst-go/pkg/model";
+} from "@bindings/lingo-translate/cmd/lingo-desktop";
+import type { TranslationDonePayload } from "@bindings/lingo-translate/cmd/lingo-desktop";
+import type { TranslationProgress } from "@bindings/lingo-translate/pkg/model";
 import { Events } from "@wailsio/runtime";
 import { toast } from "sonner";
 import { Languages, Loader2, Play, XCircle } from "lucide-react";

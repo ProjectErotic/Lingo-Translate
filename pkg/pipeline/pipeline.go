@@ -6,10 +6,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nst-go/pkg/masker"
-	"nst-go/pkg/model"
-	"nst-go/pkg/storage"
-	"nst-go/pkg/translator"
+	"lingo-translate/pkg/masker"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/storage"
+	"lingo-translate/pkg/translator"
 )
 
 type Config struct {

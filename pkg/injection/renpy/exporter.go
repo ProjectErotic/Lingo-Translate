@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"nst-go/pkg/model"
+	"lingo-translate/pkg/model"
 )
 
 //go:embed assets/IBMPlexSansThai-Light.otf
@@ -73,9 +73,9 @@ func (e *Exporter) Deploy(gamePath string, entries []model.TextEntry, opts Deplo
 		return fmt.Errorf("failed to create tl directory %s: %w", tlDir, err)
 	}
 
-	// 2. Generate 00_nst_font_layer.rpy (Scoping Rule: MUST use translate <lang> python:)
+	// 2. Generate 00_lingo_font_layer.rpy (Scoping Rule: MUST use translate <lang> python:)
 	fontScript := fmt.Sprintf(`# ==============================================================================
-# NST-V2 Additive Multi-Language Typography Layer
+# Lingo-Translate Additive Multi-Language Typography Layer
 # ==============================================================================
 
 translate %s style centered_text:
@@ -91,7 +91,7 @@ translate %s python:
 `, opts.LanguageName, opts.FontBoldName,
 		opts.LanguageName, opts.FontFileName, opts.FontBoldName, opts.FontFileName, opts.FontFileName, opts.FontFileName, opts.FontBoldName)
 
-	fontScriptPath := filepath.Join(tlDir, "00_nst_font_layer.rpy")
+	fontScriptPath := filepath.Join(tlDir, "00_lingo_font_layer.rpy")
 	if err := os.WriteFile(fontScriptPath, []byte(fontScript), 0644); err != nil {
 		return fmt.Errorf("failed to write font layer script: %w", err)
 	}
@@ -182,7 +182,7 @@ translate %s python:
 	} else {
 		// Fresh generation from entries
 		var dialogueSb strings.Builder
-		dialogueSb.WriteString(fmt.Sprintf("# NST-V2 Generated Dialogue Translation: %s\n\n", opts.LanguageName))
+		dialogueSb.WriteString(fmt.Sprintf("# Lingo-Translate Generated Dialogue Translation: %s\n\n", opts.LanguageName))
 
 		for _, entry := range entries {
 			if strings.HasPrefix(entry.KeyPath, "str_") || strings.HasPrefix(entry.KeyPath, "string:") || entry.Context == "Choice" {

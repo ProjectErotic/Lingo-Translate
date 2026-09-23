@@ -12,7 +12,7 @@ fi
 # Strip optional leading 'v'
 NEW_VER="${NEW_VER#v}"
 
-echo "🚀 Bumping NST version to ${NEW_VER}..."
+echo "🚀 Bumping Lingo version to ${NEW_VER}..."
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 

@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"nst-go/pkg/model"
-	"nst-go/pkg/storage"
+	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/storage"
 )
 
 // ProjectEntry represents metadata of a registered NST translation project
@@ -39,7 +39,7 @@ func New() (*Registry, error) {
 	if err != nil {
 		cfgDir = "."
 	}
-	regPath := filepath.Join(cfgDir, "nst", "projects.json")
+	regPath := filepath.Join(cfgDir, "lingo", "projects.json")
 	return NewWithFile(regPath)
 }
 

@@ -63,16 +63,16 @@ label start:
 		t.Fatalf("Inject failed: %v", err)
 	}
 
-	// Verify nst_language.rpy
-	langBootBytes, err := os.ReadFile(filepath.Join(gameDir, "nst_language.rpy"))
+	// Verify lingo_language.rpy
+	langBootBytes, err := os.ReadFile(filepath.Join(gameDir, "lingo_language.rpy"))
 	if err != nil || !strings.Contains(string(langBootBytes), `config.language = "Thai"`) {
-		t.Fatalf("nst_language.rpy invalid: %s", string(langBootBytes))
+		t.Fatalf("lingo_language.rpy invalid: %s", string(langBootBytes))
 	}
 
-	// Verify tl/Thai/nst_translations.rpy
-	tlBytes, err := os.ReadFile(filepath.Join(gameDir, "tl", "Thai", "nst_translations.rpy"))
+	// Verify tl/Thai/lingo_translations.rpy
+	tlBytes, err := os.ReadFile(filepath.Join(gameDir, "tl", "Thai", "lingo_translations.rpy"))
 	if err != nil {
-		t.Fatalf("Failed to read nst_translations.rpy: %v", err)
+		t.Fatalf("Failed to read lingo_translations.rpy: %v", err)
 	}
 
 	content := string(tlBytes)

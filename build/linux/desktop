@@ -1,13 +1,13 @@
 [Desktop Entry]
 Version=1.0
-Name=My Product
-Comment=A nst-desktop application
+Name=Lingo Translate
+Comment=Lingo Translate - Game Translation Suite
 # The Exec line includes %u to pass the URL to the application
-Exec=/usr/local/bin/nst-desktop %u
+Exec=/usr/local/bin/lingo-desktop %u
 Terminal=false
 Type=Application
-Icon=nst-desktop
+Icon=lingo-desktop
 Categories=Utility;
-StartupWMClass=nst-desktop
+StartupWMClass=lingo-desktop
 
  

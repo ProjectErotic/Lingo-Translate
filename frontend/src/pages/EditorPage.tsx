@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import {
   EntryService,
-} from "@bindings/nst-go/cmd/nst-desktop";
-import { TranslationStatus, type TextEntry } from "@bindings/nst-go/pkg/model";
-import type { FileSummary } from "@bindings/nst-go/pkg/storage";
+} from "@bindings/lingo-translate/cmd/lingo-desktop";
+import { TranslationStatus, type TextEntry } from "@bindings/lingo-translate/pkg/model";
+import type { FileSummary } from "@bindings/lingo-translate/pkg/storage";
 import { Button, Input, TokenizedText } from "@/ui";
 import { useCommands, useActiveScope } from "@/lib/commands";
 import { useVirtualizer } from "@tanstack/react-virtual";

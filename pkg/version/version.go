@@ -6,10 +6,10 @@ import (
 	"strings"
 )
 
-// Version is the current version of NST-V2.
+// Version is the current version of Lingo-Translate.
 // It defaults to the hardcoded release version, but can be overridden at build-time via:
 // -ldflags="-X 'nst-go/pkg/version.Version=2.3.0'"
-var Version = "2.3.0"
+var Version = "2.4.0"
 
 func init() {
 	// If VERSION file is found in working directory, use it as fallback

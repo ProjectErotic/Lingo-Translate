@@ -35,13 +35,13 @@ cross-compile:
 clean:
 	rm -rf bin dist workspace.nst
 
-install: build
+install: build desktop
 	@./scripts/install.sh
 
 uninstall:
 	@./scripts/install.sh --uninstall
 
-package: build
+package: build desktop
 	@mkdir -p dist/staging/lingo-v$(VERSION)-linux-amd64
 	@cp bin/$(BINARY_NAME) dist/staging/lingo-v$(VERSION)-linux-amd64/
 	@if [ -f bin/$(BINARY_NAME)-desktop ]; then cp bin/$(BINARY_NAME)-desktop dist/staging/lingo-v$(VERSION)-linux-amd64/; fi

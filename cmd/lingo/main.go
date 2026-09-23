@@ -516,6 +516,9 @@ func handleApp(args []string) {
 		filepath.Join(".", "bin", "lingo-desktop"),
 		filepath.Join(".", "lingo-desktop"),
 	}
+	if p, err := exec.LookPath("lingo-desktop"); err == nil {
+		candidates = append([]string{p}, candidates...)
+	}
 
 	for _, c := range candidates {
 		if fi, err := os.Stat(c); err == nil && !fi.IsDir() && (fi.Mode()&0111 != 0) {

@@ -13,11 +13,11 @@ import {
   TranslationService,
   SettingsService,
 } from "@bindings/lingo-translate/cmd/lingo-desktop";
-import type { TranslationDonePayload } from "@bindings/lingo-translate/cmd/lingo-desktop";
+import type { TranslationDonePayload, Settings } from "@bindings/lingo-translate/cmd/lingo-desktop";
 import type { TranslationProgress } from "@bindings/lingo-translate/pkg/model";
 import { Events } from "@wailsio/runtime";
 import { toast } from "sonner";
-import { Languages, Loader2, Play, XCircle } from "lucide-react";
+import { Languages, Loader2, Play, XCircle, Cpu, Zap } from "lucide-react";
 import { fetchProviders, BUILTIN_PROVIDERS, type ProviderInfo } from "@/lib/providers";
 
 interface TranslateDialogProps {
@@ -48,6 +48,9 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
 
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState<TranslationProgress | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [autoRouteShort, setAutoRouteShort] = useState(false);
+  const [enableSystemOne, setEnableSystemOne] = useState(false);
 
   // Load available providers & settings defaults on dialog open
   useEffect(() => {
@@ -60,6 +63,10 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
       // 2. Load saved settings
       SettingsService.GetSettings().then((s) => {
         if (s) {
+          setSettings(s);
+          setAutoRouteShort(s.tasks?.auto_route_short_text ?? false);
+          setEnableSystemOne(s.system_one?.enabled ?? false);
+
           const defaultProv = s.default_provider || "mock";
           setProvider(defaultProv);
           setModelName(s.default_model || "");
@@ -163,7 +170,7 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
 
       let effectiveScope = scope === "file" ? currentFile || "all" : scope;
 
-      await TranslationService.Start({
+      const startOpts: any = {
         provider: {
           name: provider,
           api_key: apiKey,
@@ -175,7 +182,44 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
         batch_size: batchSize,
         concurrency: concurrency,
         scope: effectiveScope,
-      });
+      };
+
+      if (autoRouteShort && settings?.tasks?.fast_translation?.provider) {
+        startOpts.auto_route_short = true;
+        startOpts.max_short_len = settings.tasks.max_short_length || 60;
+        startOpts.fast_provider = {
+          name: settings.tasks.fast_translation.provider,
+          model: settings.tasks.fast_translation.model || "",
+          api_key: "",
+          base_url: "",
+        };
+      } else {
+        startOpts.auto_route_short = false;
+      }
+
+      if (enableSystemOne && settings?.system_one) {
+        startOpts.system_one = {
+          enabled: true,
+          provider: settings.system_one.provider || "heuristic",
+          api_key: settings.system_one.api_key || "",
+          base_url: settings.system_one.base_url || "",
+          confidence_threshold: settings.system_one.confidence_threshold || 0.85,
+          filter_ambiguous_code: settings.system_one.features?.filter_ambiguous_code ?? true,
+          accept_ui_drafts: settings.system_one.features?.accept_ui_drafts ?? true,
+          verify_qa: settings.system_one.features?.verify_qa ?? false,
+        };
+      } else {
+        startOpts.system_one = {
+          enabled: false,
+          provider: "heuristic",
+          api_key: "",
+          filter_ambiguous_code: false,
+          accept_ui_drafts: false,
+          verify_qa: false,
+        };
+      }
+
+      await TranslationService.Start(startOpts);
 
       toast.info("Translation pipeline started in background");
     } catch (err: any) {
@@ -197,7 +241,7 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Languages className="w-5 h-5 text-primary" />
@@ -351,6 +395,82 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
                 onChange={(e) => setConcurrency(parseInt(e.target.value) || 4)}
                 disabled={isRunning}
               />
+            </div>
+          </div>
+
+          {/* Hermes Task Routing & System One Auxiliary Section */}
+          <div className="rounded-lg border border-border/70 bg-card/60 p-3 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5 text-primary" />
+                AI Routing &amp; Decision System
+              </span>
+              <span className="text-[11px] text-muted-foreground font-mono">
+                Hermes + Jev
+              </span>
+            </div>
+
+            {/* Task Routing: Fast model for short text */}
+            <div className="pt-1.5 border-t border-border/50 text-xs">
+              <label className="flex items-start gap-2 cursor-pointer">
+                {/* @ui-allow-native */}
+                <input
+                  type="checkbox"
+                  checked={autoRouteShort}
+                  onChange={(e) => setAutoRouteShort(e.target.checked)}
+                  disabled={isRunning}
+                  className="rounded border-input text-primary mt-0.5"
+                />
+                <div className="space-y-0.5">
+                  <div className="font-medium text-foreground flex items-center gap-1.5">
+                    Fast Model Auto-Route
+                    {autoRouteShort && (
+                      <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-mono">
+                        &lt;{settings?.tasks?.max_short_length || 60} chars
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Bulk short lines/UI routed to{" "}
+                    <strong className="text-foreground">
+                      {settings?.tasks?.fast_translation?.provider || "fast provider"}
+                    </strong>{" "}
+                    ({settings?.tasks?.fast_translation?.model || "default"})
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            {/* System One Auxiliary Decision Engine */}
+            <div className="pt-2 border-t border-border/50 text-xs">
+              <label className="flex items-start gap-2 cursor-pointer">
+                {/* @ui-allow-native */}
+                <input
+                  type="checkbox"
+                  checked={enableSystemOne}
+                  onChange={(e) => setEnableSystemOne(e.target.checked)}
+                  disabled={isRunning}
+                  className="rounded border-input text-primary mt-0.5"
+                />
+                <div className="space-y-0.5">
+                  <div className="font-medium text-foreground flex items-center gap-1.5">
+                    System One Decision Engine
+                    {enableSystemOne ? (
+                      <span className="text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded flex items-center gap-1 font-mono">
+                        <Zap className="w-2.5 h-2.5" />
+                        {settings?.system_one?.provider === "typesafe_jev" ? "TypeSafe Jev" : "Heuristic"}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        (Disabled)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Filters ambiguous code &amp; speculatively accepts high-confidence drafts
+                  </div>
+                </div>
+              </label>
             </div>
           </div>
 

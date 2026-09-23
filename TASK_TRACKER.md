@@ -71,6 +71,22 @@
 ### Phase 4: Verification, Benchmarking & Documentation ✅ (Completed)
 - [x] Full Go test suite: `CGO_ENABLED=0 go test ./pkg/...` (100% pass)
 - [x] Desktop test suite: `go test -tags gtk3 ./cmd/lingo-desktop/...` (100% pass)
-- [x] Concurrency race detector: `go test -race ./pkg/decision/...` (100% pass)
+- [x] Concurrency race detector: `go test -race ./pkg/decision/... ./pkg/pipeline/...` (100% pass)
 - [x] Frontend build verification: `npm run build` in `frontend/` (Clean build)
+
+### Phase 5: Desktop & CLI End-to-End Integration ✅ (Completed)
+- [x] **5.1 Provider Auth Resolution (`cmd/lingo-desktop/settings_service.go`, `translation_service.go`)**
+  - Added `ResolveProviderAuth` helper for auto-populating API keys and custom base URLs into `opts.FastProvider` and `opts.Provider`.
+  - Added test coverage in `cmd/lingo-desktop/services_test.go`.
+- [x] **5.2 CLI Task Routing & System One Flags (`cmd/lingo/main.go`)**
+  - Added `-fast-provider`, `-fast-model`, `-fast-api-key`, `-fast-base-url`, `-auto-route`, `-max-short-len`.
+  - Added `-system-one`, `-jev-key`, `-jev-base-url`, `-jev-threshold`.
+  - Rich CLI banner output summarizing active routing and auxiliary decision engines.
+- [x] **5.3 Desktop Translate Dialog (`frontend/src/components/dialogs/TranslateDialog.tsx`)**
+  - Added visual "AI Routing & Decision System" card with Hermes Fast-Route and System One Jev badges.
+  - Interactive run-time toggles for Fast Model Auto-Route and System One Auxiliary Engine.
+  - Added TypeScript bindings for `SystemOneOptions` in `frontend/bindings/lingo-translate/pkg/app/models.ts`.
+- [x] **5.4 Pipeline Thread-Safety Hardening (`pkg/pipeline/pipeline.go`)**
+  - Added `progressMu sync.Mutex` in `report()` to serialize progress callbacks and eliminate data races across concurrent workers.
+
 

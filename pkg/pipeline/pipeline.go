@@ -85,9 +85,12 @@ func (p *Pipeline) Run(ctx context.Context, entries []model.TextEntry, opts tran
 
 	var completedCount int64
 	var failedCount int64
+	var progressMu sync.Mutex
 
 	report := func(currFile string) {
 		if progressCb != nil {
+			progressMu.Lock()
+			defer progressMu.Unlock()
 			c := atomic.LoadInt64(&completedCount)
 			f := atomic.LoadInt64(&failedCount)
 			pct := 0.0

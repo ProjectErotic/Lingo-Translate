@@ -48,27 +48,41 @@ func (t *TranslationService) Start(opts app.TranslateOptions) error {
 	}
 
 	// Enrich options with Tasks and SystemOne from Settings if not explicitly overridden
-	if opts.FastProvider == nil || opts.SystemOne == nil {
-		if s, sErr := NewSettingsService().GetSettings(); sErr == nil {
-			if opts.FastProvider == nil && s.Tasks.FastTranslation.Provider != "" {
-				opts.FastProvider = &app.ProviderConfig{
-					Name:  s.Tasks.FastTranslation.Provider,
-					Model: s.Tasks.FastTranslation.Model,
-				}
-				opts.AutoRouteShort = s.Tasks.AutoRouteShortText
-				opts.MaxShortLen = s.Tasks.MaxShortLength
+	if s, sErr := NewSettingsService().GetSettings(); sErr == nil {
+		if opts.Provider.APIKey == "" {
+			key, base := s.ResolveProviderAuth(opts.Provider.Name)
+			opts.Provider.APIKey = key
+			if opts.Provider.BaseURL == "" {
+				opts.Provider.BaseURL = base
 			}
-			if opts.SystemOne == nil && s.SystemOne.Enabled {
-				opts.SystemOne = &app.SystemOneOptions{
-					Enabled:             s.SystemOne.Enabled,
-					Provider:            s.SystemOne.Provider,
-					APIKey:              s.SystemOne.APIKey,
-					BaseURL:             s.SystemOne.BaseURL,
-					ConfidenceThreshold: s.SystemOne.ConfidenceThreshold,
-					FilterAmbiguousCode: s.SystemOne.Features.FilterAmbiguousCode,
-					AcceptUIDrafts:      s.SystemOne.Features.AcceptUIDrafts,
-					VerifyQA:            s.SystemOne.Features.VerifyQA,
-				}
+		}
+		if opts.FastProvider == nil && s.Tasks.FastTranslation.Provider != "" {
+			fastKey, fastBase := s.ResolveProviderAuth(s.Tasks.FastTranslation.Provider)
+			opts.FastProvider = &app.ProviderConfig{
+				Name:    s.Tasks.FastTranslation.Provider,
+				Model:   s.Tasks.FastTranslation.Model,
+				APIKey:  fastKey,
+				BaseURL: fastBase,
+			}
+			opts.AutoRouteShort = s.Tasks.AutoRouteShortText
+			opts.MaxShortLen = s.Tasks.MaxShortLength
+		} else if opts.FastProvider != nil && opts.FastProvider.APIKey == "" {
+			fastKey, fastBase := s.ResolveProviderAuth(opts.FastProvider.Name)
+			opts.FastProvider.APIKey = fastKey
+			if opts.FastProvider.BaseURL == "" {
+				opts.FastProvider.BaseURL = fastBase
+			}
+		}
+		if opts.SystemOne == nil && s.SystemOne.Enabled {
+			opts.SystemOne = &app.SystemOneOptions{
+				Enabled:             s.SystemOne.Enabled,
+				Provider:            s.SystemOne.Provider,
+				APIKey:              s.SystemOne.APIKey,
+				BaseURL:             s.SystemOne.BaseURL,
+				ConfidenceThreshold: s.SystemOne.ConfidenceThreshold,
+				FilterAmbiguousCode: s.SystemOne.Features.FilterAmbiguousCode,
+				AcceptUIDrafts:      s.SystemOne.Features.AcceptUIDrafts,
+				VerifyQA:            s.SystemOne.Features.VerifyQA,
 			}
 		}
 	}

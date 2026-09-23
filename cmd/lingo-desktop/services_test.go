@@ -71,6 +71,18 @@ func TestDesktopServices(t *testing.T) {
 		t.Errorf("SystemOne settings not persisted properly")
 	}
 
+	// Test ResolveProviderAuth
+	kGemini, _ := savedSettings.ResolveProviderAuth("gemini")
+	if kGemini != "test-api-key-123" {
+		t.Errorf("ResolveProviderAuth(gemini) failed, got '%s'", kGemini)
+	}
+	savedSettings.OpenAIAPIKey = "sk-openai-key"
+	savedSettings.OpenAIBaseURL = "https://custom.api.com/v1"
+	kOpenAI, bOpenAI := savedSettings.ResolveProviderAuth("openai")
+	if kOpenAI != "sk-openai-key" || bOpenAI != "https://custom.api.com/v1" {
+		t.Errorf("ResolveProviderAuth(openai) failed, got key=%s, base=%s", kOpenAI, bOpenAI)
+	}
+
 	// 2. Test DetectEngine
 	gameDir := filepath.Join("..", "..", "test_game")
 	engineName, err := projectSvc.DetectEngine(gameDir)

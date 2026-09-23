@@ -227,6 +227,23 @@ func handleTranslate(args []string) {
 	formatMode := fs.String("format", "json", "Translation format: 'json' (default) or 'line' ([ID] ||| [Text])")
 	timeout := fs.Duration("timeout", 60*time.Second, "API request timeout (e.g. 60s, 300s)")
 	megaBatch := fs.Bool("mega-batch", false, "Enable mega-batch streaming preset (stream=true, format=line, timeout=300s, batch-size=300)")
+
+	// Hermes Task Routing & System One (Jev) Flags
+	fastProviderName := fs.String("fast-provider", "", "Fast/Bulk Provider for short lines (e.g. google, mock, openai)")
+	fastModelName := fs.String("fast-model", "", "Fast Provider model name")
+	fastAPIKey := fs.String("fast-api-key", "", "API key for fast provider")
+	fastBaseURL := fs.String("fast-base-url", "", "Base URL for fast provider")
+	autoRouteShort := fs.Bool("auto-route", false, "Auto route short text lines to Fast Provider (Hermes task routing)")
+	maxShortLen := fs.Int("max-short-len", 60, "Maximum character length threshold for fast routing (default 60)")
+
+	enableSystemOne := fs.Bool("system-one", false, "Enable System One decision auxiliary (TypeSafe AI Jev / heuristic)")
+	jevKeyEnv := os.Getenv("TYPESAFE_API_KEY")
+	if jevKeyEnv == "" {
+		jevKeyEnv = os.Getenv("JEV_API_KEY")
+	}
+	jevKey := fs.String("jev-key", jevKeyEnv, "TypeSafe AI Jev API key")
+	jevBaseURL := fs.String("jev-base-url", "", "TypeSafe AI Jev API base URL")
+	jevThreshold := fs.Float64("jev-threshold", 0.85, "System One decision confidence threshold (default 0.85)")
 	fs.Parse(args)
 
 	if *megaBatch {
@@ -254,24 +271,7 @@ func handleTranslate(args []string) {
 	}
 	defer ws.Close()
 
-	fmt.Println("🚀 Starting Translation Pipeline...")
-	fmt.Printf("   Provider:    %s\n", strings.ToUpper(*providerName))
-	fmt.Printf("   Language:    %s -> %s\n", *srcLang, *tgtLang)
-	fmt.Printf("   Style:       %s\n", strings.ToUpper(*styleName))
-	if *customPrompt != "" {
-		fmt.Printf("   Prompt:      %s\n", *customPrompt)
-	}
-	fmt.Printf("   Batch Size:  %d\n", *batchSize)
-	fmt.Printf("   Concurrency: %d workers\n", *concurrency)
-	if *streamMode || *megaBatch {
-		fmt.Printf("   Mode:        STREAMING (Format: %s, Timeout: %v)\n", *formatMode, *timeout)
-	}
-	fmt.Println("------------------------------------------")
-
-	startTime := time.Now()
-	ctx := context.Background()
-
-	err = ws.Translate(ctx, app.TranslateOptions{
+	translateOpts := app.TranslateOptions{
 		Provider: app.ProviderConfig{
 			Name:    *providerName,
 			APIKey:  *apiKey,
@@ -288,7 +288,62 @@ func handleTranslate(args []string) {
 		Scope:       "all",
 		Stream:      *streamMode,
 		Format:      *formatMode,
-	}, func(p model.TranslationProgress) {
+	}
+
+	if *fastProviderName != "" {
+		translateOpts.FastProvider = &app.ProviderConfig{
+			Name:    *fastProviderName,
+			Model:   *fastModelName,
+			APIKey:  *fastAPIKey,
+			BaseURL: *fastBaseURL,
+		}
+		translateOpts.AutoRouteShort = *autoRouteShort
+		translateOpts.MaxShortLen = *maxShortLen
+	}
+
+	if *enableSystemOne || *jevKey != "" {
+		translateOpts.SystemOne = &app.SystemOneOptions{
+			Enabled:             true,
+			Provider:            "typesafe_jev",
+			APIKey:              *jevKey,
+			BaseURL:             *jevBaseURL,
+			ConfidenceThreshold: *jevThreshold,
+			FilterAmbiguousCode: true,
+			AcceptUIDrafts:      true,
+			VerifyQA:            false,
+		}
+		if *jevKey == "" {
+			translateOpts.SystemOne.Provider = "heuristic"
+		}
+	}
+
+	fmt.Println("🚀 Starting Translation Pipeline...")
+	fmt.Printf("   Provider:    %s\n", strings.ToUpper(*providerName))
+	if translateOpts.FastProvider != nil {
+		fmt.Printf("   Fast Router: %s (%s) [AutoRoute: %v, MaxLen: %d]\n",
+			strings.ToUpper(translateOpts.FastProvider.Name), translateOpts.FastProvider.Model,
+			translateOpts.AutoRouteShort, translateOpts.MaxShortLen)
+	}
+	if translateOpts.SystemOne != nil && translateOpts.SystemOne.Enabled {
+		fmt.Printf("   System One:  ENABLED (%s, Threshold: %.2f)\n",
+			translateOpts.SystemOne.Provider, translateOpts.SystemOne.ConfidenceThreshold)
+	}
+	fmt.Printf("   Language:    %s -> %s\n", *srcLang, *tgtLang)
+	fmt.Printf("   Style:       %s\n", strings.ToUpper(*styleName))
+	if *customPrompt != "" {
+		fmt.Printf("   Prompt:      %s\n", *customPrompt)
+	}
+	fmt.Printf("   Batch Size:  %d\n", *batchSize)
+	fmt.Printf("   Concurrency: %d workers\n", *concurrency)
+	if *streamMode || *megaBatch {
+		fmt.Printf("   Mode:        STREAMING (Format: %s, Timeout: %v)\n", *formatMode, *timeout)
+	}
+	fmt.Println("------------------------------------------")
+
+	startTime := time.Now()
+	ctx := context.Background()
+
+	err = ws.Translate(ctx, translateOpts, func(p model.TranslationProgress) {
 		fmt.Printf("\r⏳ Progress: %5.1f%% (%d/%d) | Current: %-25s",
 			p.Percent, p.Completed, p.Total, p.CurrentFile)
 	})

@@ -89,10 +89,60 @@ export class PublishOptions {
 }
 
 /**
+ * SystemOneOptions configures the auxiliary decision engine (TypeSafe AI Jev / Heuristic)
+ */
+export class SystemOneOptions {
+    "enabled": boolean;
+    "provider": string;
+    "api_key": string;
+    "base_url"?: string;
+    "confidence_threshold"?: number;
+    "filter_ambiguous_code": boolean;
+    "accept_ui_drafts": boolean;
+    "verify_qa": boolean;
+
+    /** Creates a new SystemOneOptions instance. */
+    constructor($$source: Partial<SystemOneOptions> = {}) {
+        if (!("enabled" in $$source)) {
+            this["enabled"] = false;
+        }
+        if (!("provider" in $$source)) {
+            this["provider"] = "";
+        }
+        if (!("api_key" in $$source)) {
+            this["api_key"] = "";
+        }
+        if (!("filter_ambiguous_code" in $$source)) {
+            this["filter_ambiguous_code"] = false;
+        }
+        if (!("accept_ui_drafts" in $$source)) {
+            this["accept_ui_drafts"] = false;
+        }
+        if (!("verify_qa" in $$source)) {
+            this["verify_qa"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SystemOneOptions instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SystemOneOptions {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SystemOneOptions($$parsedSource as Partial<SystemOneOptions>);
+    }
+}
+
+/**
  * TranslateOptions configures a batch translation run
  */
 export class TranslateOptions {
     "provider": ProviderConfig;
+    "fast_provider"?: ProviderConfig;
+    "auto_route_short"?: boolean;
+    "max_short_len"?: number;
+    "system_one"?: SystemOneOptions;
     "source_lang": string;
     "target_lang": string;
     "batch_size": number;
@@ -136,9 +186,16 @@ export class TranslateOptions {
         if ("provider" in $$parsedSource) {
             $$parsedSource["provider"] = $$createField0_0($$parsedSource["provider"]);
         }
+        if ("fast_provider" in $$parsedSource && $$parsedSource["fast_provider"]) {
+            $$parsedSource["fast_provider"] = $$createField0_0($$parsedSource["fast_provider"]);
+        }
+        if ("system_one" in $$parsedSource && $$parsedSource["system_one"]) {
+            $$parsedSource["system_one"] = SystemOneOptions.createFrom($$parsedSource["system_one"]);
+        }
         return new TranslateOptions($$parsedSource as Partial<TranslateOptions>);
     }
 }
 
 // Private type creation functions
 const $$createType0 = ProviderConfig.createFrom;
+

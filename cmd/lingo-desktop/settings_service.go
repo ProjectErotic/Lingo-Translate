@@ -237,3 +237,26 @@ func (s *SettingsService) OpenUchsPortal() error {
 	return chanomhub.OpenUchsPortal(ctx, settings.ChanomhubToken, "")
 }
 
+// ResolveProviderAuth returns the configured API key and BaseURL for the specified provider.
+func (s Settings) ResolveProviderAuth(providerName string) (apiKey string, baseURL string) {
+	switch providerName {
+	case "gemini":
+		return s.GeminiAPIKey, ""
+	case "openai":
+		return s.OpenAIAPIKey, s.OpenAIBaseURL
+	case "google":
+		return s.GoogleAPIKey, ""
+	case "uchs":
+		return s.UchsAPIKey, "https://ilms.uchs-th.com/v1"
+	default:
+		var key, base string
+		if s.PluginKeys != nil {
+			key = s.PluginKeys[providerName]
+		}
+		if s.PluginBaseURLs != nil {
+			base = s.PluginBaseURLs[providerName]
+		}
+		return key, base
+	}
+}
+

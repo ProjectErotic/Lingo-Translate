@@ -156,11 +156,13 @@ jobs:
           cp bin/lingo* "dist_staging/${PACKAGE_NAME}/"
           cp LICENSE "dist_staging/${PACKAGE_NAME}/"
 
-          # Include Desktop shortcut and icon for Linux
+          # Include Desktop shortcut, icon, and installer for Linux
           if [ "${OS}" = "linux" ]; then
             cp build/appicon.png "dist_staging/${PACKAGE_NAME}/icon.png"
             cp build/linux/Lingo.desktop "dist_staging/${PACKAGE_NAME}/Lingo.desktop"
             chmod +x "dist_staging/${PACKAGE_NAME}/Lingo.desktop"
+            cp scripts/install.sh "dist_staging/${PACKAGE_NAME}/install.sh"
+            chmod +x "dist_staging/${PACKAGE_NAME}/install.sh"
           fi
 
           mkdir -p release_assets

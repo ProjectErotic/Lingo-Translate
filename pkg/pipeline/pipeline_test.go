@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"lingo-translate/pkg/decision"
 	"lingo-translate/pkg/model"
 	"lingo-translate/pkg/storage"
 	"lingo-translate/pkg/translator"
@@ -99,4 +100,95 @@ func TestPipelineExecution(t *testing.T) {
 	}
 
 	t.Log("Pipeline test with Masking and TM Cache passed!")
+}
+
+func TestPipelineSpeculativeDraftAcceptor(t *testing.T) {
+	tempDir := t.TempDir()
+	store, _ := storage.Open(filepath.Join(tempDir, "test.nst"))
+	defer store.Close()
+
+	primaryTrans := mock.New("[Primary] ")
+	fastTrans := mock.New("[FastMT] ")
+	decisionEngine := decision.NewHeuristicEngine()
+
+	pipe := New(store, primaryTrans, Config{BatchSize: 10, Concurrency: 1})
+	pipe.SetTaskRouting(fastTrans, true, 30)
+	pipe.SetSystemOne(decisionEngine, true, false)
+
+	entries := []model.TextEntry{
+		{
+			ID:     "1",
+			Source: "Play", // Short string <= 30 chars
+		},
+		{
+			ID:     "2",
+			Source: "This is a much longer narrative text exceeding the thirty character threshold for testing.", // Long string > 30 chars
+		},
+	}
+
+	opts := translator.Options{SourceLang: "en", TargetLang: "th"}
+	results, err := pipe.Run(context.Background(), entries, opts, nil)
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+
+	// Short string should have been speculatively drafted and accepted by System One!
+	if results[0].Translator != "mock" {
+		t.Errorf("expected fast translator 'mock', got '%s'", results[0].Translator)
+	}
+	if results[0].Status != model.StatusTranslated {
+		t.Errorf("expected StatusTranslated, got %s", results[0].Status)
+	}
+	if results[0].Target != "[FastMT] Play" {
+		t.Errorf("expected '[FastMT] Play', got '%s'", results[0].Target)
+	}
+
+	// Long string should have been routed to primary translator!
+	if results[1].Target != "[Primary] This is a much longer narrative text exceeding the thirty character threshold for testing." {
+		t.Errorf("expected primary translation on long string, got '%s'", results[1].Target)
+	}
+}
+
+func TestPipelineQAValidation(t *testing.T) {
+	tempDir := t.TempDir()
+	store, _ := storage.Open(filepath.Join(tempDir, "qa_test.nst"))
+	defer store.Close()
+
+	primaryTrans := mock.New("[Primary] ")
+	pipe := New(store, primaryTrans, Config{BatchSize: 10, Concurrency: 1})
+
+	// Decision engine that flags refusal
+	mockEngine := &mockRefusalDecisionEngine{}
+	pipe.SetSystemOne(mockEngine, false, true)
+
+	entries := []model.TextEntry{
+		{
+			ID:     "refused_1",
+			Source: "Dangerous spell",
+		},
+	}
+
+	opts := translator.Options{SourceLang: "en", TargetLang: "th"}
+	results, err := pipe.Run(context.Background(), entries, opts, nil)
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+
+	// Should be flagged as untranslated because QA detected refusal
+	if results[0].Status != model.StatusUntranslated {
+		t.Errorf("expected StatusUntranslated on refusal, got %s", results[0].Status)
+	}
+}
+
+type mockRefusalDecisionEngine struct{}
+
+func (m *mockRefusalDecisionEngine) Name() string { return "mock_refusal" }
+func (m *mockRefusalDecisionEngine) Noul(ctx context.Context, input, question string) (bool, float64, error) {
+	return true, 0.95, nil // Always flags as refusal
+}
+func (m *mockRefusalDecisionEngine) Choice(ctx context.Context, input string, choices []string) (string, float64, error) {
+	return choices[0], 1.0, nil
+}
+func (m *mockRefusalDecisionEngine) Score(ctx context.Context, input, criteria string) (float64, error) {
+	return 0.1, nil
 }

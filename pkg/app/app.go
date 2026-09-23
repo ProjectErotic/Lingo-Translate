@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"lingo-translate/pkg/decision"
+	"lingo-translate/pkg/decision/jev"
 	renpyInj "lingo-translate/pkg/injection/renpy"
 	rpgmInj "lingo-translate/pkg/injection/rpgm"
 	"lingo-translate/pkg/merger"
@@ -36,18 +38,34 @@ type ProviderConfig struct {
 	Timeout time.Duration `json:"timeout,omitempty"`
 }
 
+// SystemOneOptions configures the auxiliary decision engine (TypeSafe AI Jev / Heuristic)
+type SystemOneOptions struct {
+	Enabled             bool    `json:"enabled"`
+	Provider            string  `json:"provider"`
+	APIKey              string  `json:"api_key"`
+	BaseURL             string  `json:"base_url,omitempty"`
+	ConfidenceThreshold float64 `json:"confidence_threshold,omitempty"`
+	FilterAmbiguousCode bool    `json:"filter_ambiguous_code"`
+	AcceptUIDrafts      bool    `json:"accept_ui_drafts"`
+	VerifyQA            bool    `json:"verify_qa"`
+}
+
 // TranslateOptions configures a batch translation run
 type TranslateOptions struct {
-	Provider    ProviderConfig `json:"provider"`
-	SourceLang  string         `json:"source_lang"`
-	TargetLang  string         `json:"target_lang"`
-	BatchSize   int            `json:"batch_size"`
-	Concurrency int            `json:"concurrency"`
-	Scope       string         `json:"scope"` // "all", "untranslated", or file path
-	Stream      bool           `json:"stream,omitempty"`
-	Format      string         `json:"format,omitempty"` // "json" (default) or "line"
-	Style       string         `json:"style,omitempty"`  // e.g. "standard", "nsfw", "vn_romance", "fantasy_rpg", etc.
-	Prompt      string         `json:"prompt,omitempty"` // Custom system prompt instruction
+	Provider       ProviderConfig    `json:"provider"`
+	FastProvider   *ProviderConfig   `json:"fast_provider,omitempty"`
+	AutoRouteShort bool              `json:"auto_route_short,omitempty"`
+	MaxShortLen    int               `json:"max_short_len,omitempty"`
+	SystemOne      *SystemOneOptions `json:"system_one,omitempty"`
+	SourceLang     string            `json:"source_lang"`
+	TargetLang     string            `json:"target_lang"`
+	BatchSize      int               `json:"batch_size"`
+	Concurrency    int               `json:"concurrency"`
+	Scope          string            `json:"scope"` // "all", "untranslated", or file path
+	Stream         bool              `json:"stream,omitempty"`
+	Format         string            `json:"format,omitempty"` // "json" (default) or "line"
+	Style          string            `json:"style,omitempty"`  // e.g. "standard", "nsfw", "vn_romance", "fantasy_rpg", etc.
+	Prompt         string            `json:"prompt,omitempty"` // Custom system prompt instruction
 }
 
 // PublishOptions configures translation mod publishing to Chanomhub
@@ -404,6 +422,28 @@ func (w *Workspace) Translate(ctx context.Context, opts TranslateOptions, progre
 		BatchSize:   batchSize,
 		Concurrency: concurrency,
 	})
+
+	// Configure Fast / Bulk Task Routing (Hermes Architecture)
+	if opts.FastProvider != nil && opts.FastProvider.Name != "" {
+		if fastTrans, err := CreateTranslator(*opts.FastProvider); err == nil {
+			pipe.SetTaskRouting(fastTrans, opts.AutoRouteShort, opts.MaxShortLen)
+		}
+	}
+
+	// Configure System One Decision Engine (TypeSafe AI Jev)
+	if opts.SystemOne != nil && opts.SystemOne.Enabled {
+		if opts.SystemOne.Provider == "typesafe_jev" && opts.SystemOne.APIKey != "" {
+			jevClient := jev.NewClient(jev.Config{
+				APIKey:              opts.SystemOne.APIKey,
+				BaseURL:             opts.SystemOne.BaseURL,
+				ConfidenceThreshold: opts.SystemOne.ConfidenceThreshold,
+				FallbackToHeuristic: true,
+			})
+			pipe.SetSystemOne(jevClient, opts.SystemOne.AcceptUIDrafts, opts.SystemOne.VerifyQA)
+		} else {
+			pipe.SetSystemOne(decision.NewHeuristicEngine(), opts.SystemOne.AcceptUIDrafts, opts.SystemOne.VerifyQA)
+		}
+	}
 
 	srcLang := opts.SourceLang
 	if srcLang == "" && proj != nil {

@@ -3,6 +3,8 @@ package filter
 import (
 	"path/filepath"
 	"testing"
+
+	"lingo-translate/pkg/decision"
 )
 
 func TestSmartFilter(t *testing.T) {
@@ -55,4 +57,30 @@ func TestSmartFilter(t *testing.T) {
 	if !mgr2.ShouldSkip("CUSTOM_TOKEN_1") {
 		t.Errorf("Imported rule should be skipped")
 	}
+}
+
+func TestFilterWithDecisionEngine(t *testing.T) {
+	mgr := New()
+	engine := decision.NewHeuristicEngine()
+	mgr.SetDecisionEngine(engine, true)
+
+	// 1. Ambiguous code string should be skipped by decision engine
+	if !mgr.ShouldSkip("actorAttackSlash") {
+		t.Errorf("Expected ambiguous code identifier 'actorAttackSlash' to be skipped")
+	}
+
+	// 2. Player-facing text in gray-zone should NOT be skipped
+	if mgr.ShouldSkip("Attack +10% upon critical hit!") {
+		t.Errorf("Expected player-facing buff text to NOT be skipped")
+	}
+
+	// 3. Thai text should never be skipped as code
+	if mgr.ShouldSkip("สวัสดีนักเดินทาง เจ้าต้องการอะไร") {
+		t.Errorf("Expected Thai text to NOT be skipped")
+	}
+
+	// 4. When decision engine is disabled, regular heuristic runs
+	mgr.SetDecisionEngine(engine, false)
+	// Without decision engine, single camelCase might pass if not caught by regex
+	_ = mgr.ShouldSkip("actorAttackSlash")
 }

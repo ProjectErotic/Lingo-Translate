@@ -2,10 +2,12 @@ package pipeline
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"lingo-translate/pkg/decision"
 	"lingo-translate/pkg/masker"
 	"lingo-translate/pkg/model"
 	"lingo-translate/pkg/storage"
@@ -20,9 +22,15 @@ type Config struct {
 }
 
 type Pipeline struct {
-	cfg        Config
-	store      *storage.Storage
-	translator translator.Translator
+	cfg            Config
+	store          *storage.Storage
+	translator     translator.Translator
+	fastTranslator translator.Translator
+	autoRouteShort bool
+	maxShortLen    int
+	decisionEngine decision.DecisionEngine
+	acceptUIDrafts bool
+	verifyQA       bool
 }
 
 func New(store *storage.Storage, trans translator.Translator, cfg Config) *Pipeline {
@@ -40,10 +48,29 @@ func New(store *storage.Storage, trans translator.Translator, cfg Config) *Pipel
 	}
 
 	return &Pipeline{
-		cfg:        cfg,
-		store:      store,
-		translator: trans,
+		cfg:         cfg,
+		store:       store,
+		translator:  trans,
+		maxShortLen: 60,
 	}
+}
+
+// SetTaskRouting configures the fast bulk translator and short-text routing (Hermes Architecture)
+func (p *Pipeline) SetTaskRouting(fastTrans translator.Translator, autoRoute bool, maxLen int) {
+	p.fastTranslator = fastTrans
+	p.autoRouteShort = autoRoute
+	if maxLen > 0 {
+		p.maxShortLen = maxLen
+	} else {
+		p.maxShortLen = 60
+	}
+}
+
+// SetSystemOne configures the auxiliary System One decision engine (TypeSafe AI Jev)
+func (p *Pipeline) SetSystemOne(engine decision.DecisionEngine, acceptUIDrafts, verifyQA bool) {
+	p.decisionEngine = engine
+	p.acceptUIDrafts = acceptUIDrafts
+	p.verifyQA = verifyQA
 }
 
 // ProgressCallback is called whenever translation progress updates
@@ -103,6 +130,73 @@ func (p *Pipeline) Run(ctx context.Context, entries []model.TextEntry, opts tran
 	report("Cache checked")
 
 	if len(toTranslateIndices) == 0 {
+		return entries, nil
+	}
+
+	// 2. Speculative Draft & Fast Task Routing Pass (if FastTranslator or SystemOne enabled)
+	if p.fastTranslator != nil && (p.autoRouteShort || p.acceptUIDrafts) {
+		var shortIndices []int
+		var remainingIndices []int
+
+		for _, idx := range toTranslateIndices {
+			src := entries[idx].Source
+			if len(src) <= p.maxShortLen {
+				shortIndices = append(shortIndices, idx)
+			} else {
+				remainingIndices = append(remainingIndices, idx)
+			}
+		}
+
+		if len(shortIndices) > 0 {
+			shortTexts := make([]string, len(shortIndices))
+			for i, sIdx := range shortIndices {
+				shortTexts[i] = entries[sIdx].Source
+			}
+
+			fastResults, fastErr := p.fastTranslator.Translate(ctx, shortTexts, opts)
+			if fastErr == nil && len(fastResults) == len(shortIndices) {
+				for i, sIdx := range shortIndices {
+					res := fastResults[i]
+					if res.Error == nil && res.Target != "" {
+						accepted := false
+						if p.decisionEngine != nil && p.acceptUIDrafts {
+							// System One (Jev) verifies draft
+							isAccurate, conf, dErr := p.decisionEngine.Noul(ctx,
+								fmt.Sprintf("Source: %s\nDraft: %s", entries[sIdx].Source, res.Target),
+								"Is this draft translation accurate and natural for Thai game UI?")
+							if dErr == nil && isAccurate && conf >= 0.80 {
+								accepted = true
+							}
+						} else if p.autoRouteShort {
+							accepted = true
+						}
+
+						if accepted {
+							entries[sIdx].Target = res.Target
+							entries[sIdx].Status = model.StatusTranslated
+							entries[sIdx].Translator = res.Translator
+							entries[sIdx].UpdatedAt = time.Now()
+							if p.store != nil {
+								_ = p.store.UpdateEntryTarget(entries[sIdx].ID, res.Target, model.StatusTranslated, entries[sIdx].Translator)
+								_ = p.store.SetCache(entries[sIdx].Source, res.Target, opts.SourceLang, opts.TargetLang, entries[sIdx].Translator)
+							}
+							atomic.AddInt64(&completedCount, 1)
+							continue
+						}
+					}
+					// If not accepted or error, fall through to primary frontier model
+					remainingIndices = append(remainingIndices, sIdx)
+				}
+			} else {
+				remainingIndices = append(remainingIndices, shortIndices...)
+			}
+		}
+		toTranslateIndices = remainingIndices
+		report("Fast routing checked")
+	}
+
+	if len(toTranslateIndices) == 0 {
+		report("Done")
 		return entries, nil
 	}
 
@@ -176,6 +270,22 @@ func (p *Pipeline) Run(ctx context.Context, entries []model.TextEntry, opts tran
 					}
 
 					unmasked := masker.Unmask(transResults[idx].Target, maskResults[idx].TagMap)
+
+					// Automated QA Sentinel check (if enabled)
+					if p.decisionEngine != nil && p.verifyQA {
+						isRefusal, conf, qErr := p.decisionEngine.Noul(ctx, unmasked, "Is this text an AI refusal, apology, or policy refusal notice?")
+						if qErr == nil && isRefusal && conf >= 0.80 {
+							mu.Lock()
+							entries[entryIdx].Status = model.StatusUntranslated
+							entries[entryIdx].UpdatedAt = time.Now()
+							if p.store != nil {
+								_ = p.store.UpdateEntryTarget(entries[entryIdx].ID, entries[entryIdx].Source, model.StatusUntranslated, "")
+							}
+							mu.Unlock()
+							atomic.AddInt64(&failedCount, 1)
+							continue
+						}
+					}
 
 					mu.Lock()
 					entries[entryIdx].Target = unmasked

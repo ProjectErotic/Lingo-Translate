@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -204,11 +205,15 @@ func (s *SettingsService) SaveSettings(settings Settings) error {
 	return os.WriteFile(s.filePath, data, 0600)
 }
 
-// RequestUchsKey requests a new Virtual Key from Chanomhub and saves it into settings
-func (s *SettingsService) RequestUchsKey() (string, error) {
+// RequestUchsKey requests a new Virtual Key from Chanomhub and saves it into settings.
+// If token is provided, it updates the saved Chanomhub token; otherwise it uses the persisted token.
+func (s *SettingsService) RequestUchsKey(token string) (string, error) {
 	settings, err := s.GetSettings()
 	if err != nil {
 		return "", err
+	}
+	if strings.TrimSpace(token) != "" {
+		settings.ChanomhubToken = strings.TrimSpace(token)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -225,11 +230,16 @@ func (s *SettingsService) RequestUchsKey() (string, error) {
 	return key, nil
 }
 
-// OpenUchsPortal opens the UCHS Account Portal in the default web browser via Chanomhub SSO
-func (s *SettingsService) OpenUchsPortal() error {
+// OpenUchsPortal opens the UCHS Account Portal in the default web browser via Chanomhub SSO.
+// If token is provided, it updates the saved Chanomhub token; otherwise it uses the persisted token.
+func (s *SettingsService) OpenUchsPortal(token string) error {
 	settings, err := s.GetSettings()
 	if err != nil {
 		return err
+	}
+	if strings.TrimSpace(token) != "" {
+		settings.ChanomhubToken = strings.TrimSpace(token)
+		_ = s.SaveSettings(settings)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()

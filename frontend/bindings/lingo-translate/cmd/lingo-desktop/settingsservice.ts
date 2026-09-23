@@ -7,15 +7,44 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as app$0 from "../../pkg/app/models.js";
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as $models from "./models.js";
+
+/**
+ * GetProviders returns list of all built-in and plugin translation providers
+ */
+export function GetProviders(): $CancellablePromise<app$0.ProviderInfo[]> {
+    return $Call.ByID(3346709858).then(($result: any) => {
+        return $$createType1($result);
+    });
+}
 
 /**
  * GetSettings reads persisted settings or returns defaults
  */
 export function GetSettings(): $CancellablePromise<$models.Settings> {
     return $Call.ByID(3034808949).then(($result: any) => {
-        return $$createType0($result);
+        return $$createType2($result);
     });
+}
+
+/**
+ * OpenUchsPortal opens the UCHS Account Portal in the default web browser via Chanomhub SSO.
+ * If token is provided, it updates the saved Chanomhub token; otherwise it uses the persisted token.
+ */
+export function OpenUchsPortal(token: string): $CancellablePromise<void> {
+    return $Call.ByID(934247943, token);
+}
+
+/**
+ * RequestUchsKey requests a new Virtual Key from Chanomhub and saves it into settings.
+ * If token is provided, it updates the saved Chanomhub token; otherwise it uses the persisted token.
+ */
+export function RequestUchsKey(token: string): $CancellablePromise<string> {
+    return $Call.ByID(1512064863, token);
 }
 
 /**
@@ -25,19 +54,7 @@ export function SaveSettings(settings: $models.Settings): $CancellablePromise<vo
     return $Call.ByID(2662658340, settings);
 }
 
-/**
- * RequestUchsKey requests a new Virtual Key from Chanomhub
- */
-export function RequestUchsKey(): $CancellablePromise<string> {
-    return $Call.ByName("main.SettingsService.RequestUchsKey");
-}
-
-/**
- * OpenUchsPortal opens the UCHS Account Portal in the default web browser via Chanomhub SSO
- */
-export function OpenUchsPortal(): $CancellablePromise<void> {
-    return $Call.ByName("main.SettingsService.OpenUchsPortal");
-}
-
 // Private type creation functions
-const $$createType0 = $models.Settings.createFrom;
+const $$createType0 = app$0.ProviderInfo.createFrom;
+const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = $models.Settings.createFrom;

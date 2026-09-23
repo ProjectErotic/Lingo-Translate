@@ -38,76 +38,14 @@ export class QueryResult {
     }
 }
 
-export class TaskBinding {
-    "provider": string;
-    "model": string;
-    "temperature"?: number;
-    "max_tokens"?: number;
-
-    constructor($$source: Partial<TaskBinding> = {}) {
-        this["provider"] = $$source["provider"] || "";
-        this["model"] = $$source["model"] || "";
-        if ("temperature" in $$source) this["temperature"] = $$source["temperature"];
-        if ("max_tokens" in $$source) this["max_tokens"] = $$source["max_tokens"];
-        Object.assign(this, $$source);
-    }
-}
-
-export class SystemOneFeatures {
-    "filter_ambiguous_code": boolean;
-    "accept_ui_drafts": boolean;
-    "verify_qa": boolean;
-
-    constructor($$source: Partial<SystemOneFeatures> = {}) {
-        this["filter_ambiguous_code"] = $$source["filter_ambiguous_code"] ?? true;
-        this["accept_ui_drafts"] = $$source["accept_ui_drafts"] ?? true;
-        this["verify_qa"] = $$source["verify_qa"] ?? false;
-        Object.assign(this, $$source);
-    }
-}
-
-export class SystemOneConfig {
-    "enabled": boolean;
-    "provider": string;
-    "api_key": string;
-    "base_url"?: string;
-    "confidence_threshold": number;
-    "features": SystemOneFeatures;
-
-    constructor($$source: Partial<SystemOneConfig> = {}) {
-        this["enabled"] = $$source["enabled"] ?? false;
-        this["provider"] = $$source["provider"] || "typesafe_jev";
-        this["api_key"] = $$source["api_key"] || "";
-        if ("base_url" in $$source) this["base_url"] = $$source["base_url"];
-        this["confidence_threshold"] = $$source["confidence_threshold"] ?? 0.85;
-        this["features"] = new SystemOneFeatures($$source["features"] || {});
-        Object.assign(this, $$source);
-    }
-}
-
-export class TasksConfig {
-    "primary_translation": TaskBinding;
-    "fast_translation": TaskBinding;
-    "auto_route_short_text": boolean;
-    "max_short_length": number;
-
-    constructor($$source: Partial<TasksConfig> = {}) {
-        this["primary_translation"] = new TaskBinding($$source["primary_translation"] || {});
-        this["fast_translation"] = new TaskBinding($$source["fast_translation"] || {});
-        this["auto_route_short_text"] = $$source["auto_route_short_text"] ?? false;
-        this["max_short_length"] = $$source["max_short_length"] ?? 60;
-        Object.assign(this, $$source);
-    }
-}
-
 export class Settings {
     /**
-     * "mock", "gemini", "openai", "google"
+     * "mock", "gemini", "openai", "google", or any custom plugin name
      */
     "default_provider": string;
 
     /**
-     * e.g. "gemini-2.5-flash", "gpt-4o-mini"
+     * e.g. "gemini-2.5-flash", "gpt-4o-mini", etc.
      */
     "default_model": string;
     "gemini_api_key": string;
@@ -115,9 +53,17 @@ export class Settings {
     "openai_base_url": string;
     "google_api_key": string;
     "chanomhub_token": string;
-    "uchs_api_key"?: string;
-    "plugin_keys"?: Record<string, string>;
-    "plugin_base_urls"?: Record<string, string>;
+    "uchs_api_key": string;
+
+    /**
+     * dynamic map: provider_name -> api_key
+     */
+    "plugin_keys"?: { [_ in string]?: string };
+
+    /**
+     * dynamic map: provider_name -> base_url
+     */
+    "plugin_base_urls"?: { [_ in string]?: string };
 
     /**
      * "Japanese"
@@ -144,9 +90,11 @@ export class Settings {
      */
     "theme": string;
 
-    /** Task-Based AI Routing & System One Auxiliary */
-    "tasks"?: TasksConfig;
-    "system_one"?: SystemOneConfig;
+    /**
+     * Task-Based AI Routing & Auxiliary System One (Hermes-Style Architecture)
+     */
+    "tasks": TasksConfig;
+    "system_one": SystemOneConfig;
 
     /** Creates a new Settings instance. */
     constructor($$source: Partial<Settings> = {}) {
@@ -171,6 +119,9 @@ export class Settings {
         if (!("chanomhub_token" in $$source)) {
             this["chanomhub_token"] = "";
         }
+        if (!("uchs_api_key" in $$source)) {
+            this["uchs_api_key"] = "";
+        }
         if (!("default_source_lang" in $$source)) {
             this["default_source_lang"] = "";
         }
@@ -186,6 +137,12 @@ export class Settings {
         if (!("theme" in $$source)) {
             this["theme"] = "";
         }
+        if (!("tasks" in $$source)) {
+            this["tasks"] = (new TasksConfig());
+        }
+        if (!("system_one" in $$source)) {
+            this["system_one"] = (new SystemOneConfig());
+        }
 
         Object.assign(this, $$source);
     }
@@ -194,8 +151,239 @@ export class Settings {
      * Creates a new Settings instance from a string or object.
      */
     static createFrom($$source: any = {}): Settings {
+        const $$createField8_0 = $$createType2;
+        const $$createField9_0 = $$createType2;
+        const $$createField15_0 = $$createType3;
+        const $$createField16_0 = $$createType4;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("plugin_keys" in $$parsedSource) {
+            $$parsedSource["plugin_keys"] = $$createField8_0($$parsedSource["plugin_keys"]);
+        }
+        if ("plugin_base_urls" in $$parsedSource) {
+            $$parsedSource["plugin_base_urls"] = $$createField9_0($$parsedSource["plugin_base_urls"]);
+        }
+        if ("tasks" in $$parsedSource) {
+            $$parsedSource["tasks"] = $$createField15_0($$parsedSource["tasks"]);
+        }
+        if ("system_one" in $$parsedSource) {
+            $$parsedSource["system_one"] = $$createField16_0($$parsedSource["system_one"]);
+        }
         return new Settings($$parsedSource as Partial<Settings>);
+    }
+}
+
+/**
+ * SystemOneConfig specifies the auxiliary non-autoregressive decision engine (e.g. TypeSafe AI Jev)
+ */
+export class SystemOneConfig {
+    /**
+     * Auxiliary toggle (ON/OFF)
+     */
+    "enabled": boolean;
+
+    /**
+     * "typesafe_jev", "heuristic"
+     */
+    "provider": string;
+
+    /**
+     * TypeSafe AI API Key
+     */
+    "api_key": string;
+
+    /**
+     * Endpoint override (e.g. https://api.typesafe.ai/v1)
+     */
+    "base_url"?: string;
+
+    /**
+     * Minimum confidence score (e.g. 0.85)
+     */
+    "confidence_threshold": number;
+
+    /**
+     * Fine-grained delegation toggles
+     */
+    "features": SystemOneFeatures;
+
+    /** Creates a new SystemOneConfig instance. */
+    constructor($$source: Partial<SystemOneConfig> = {}) {
+        if (!("enabled" in $$source)) {
+            this["enabled"] = false;
+        }
+        if (!("provider" in $$source)) {
+            this["provider"] = "";
+        }
+        if (!("api_key" in $$source)) {
+            this["api_key"] = "";
+        }
+        if (!("confidence_threshold" in $$source)) {
+            this["confidence_threshold"] = 0;
+        }
+        if (!("features" in $$source)) {
+            this["features"] = (new SystemOneFeatures());
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SystemOneConfig instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SystemOneConfig {
+        const $$createField5_0 = $$createType5;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("features" in $$parsedSource) {
+            $$parsedSource["features"] = $$createField5_0($$parsedSource["features"]);
+        }
+        return new SystemOneConfig($$parsedSource as Partial<SystemOneConfig>);
+    }
+}
+
+/**
+ * SystemOneFeatures defines which decision delegations are enabled
+ */
+export class SystemOneFeatures {
+    /**
+     * Filter code vs text in gray-zone (Noul)
+     */
+    "filter_ambiguous_code": boolean;
+
+    /**
+     * Speculatively accept MT UI drafts without LLM (Noul)
+     */
+    "accept_ui_drafts": boolean;
+
+    /**
+     * Quality & refusal/hallucination sentinel (Score/Noul)
+     */
+    "verify_qa": boolean;
+
+    /** Creates a new SystemOneFeatures instance. */
+    constructor($$source: Partial<SystemOneFeatures> = {}) {
+        if (!("filter_ambiguous_code" in $$source)) {
+            this["filter_ambiguous_code"] = false;
+        }
+        if (!("accept_ui_drafts" in $$source)) {
+            this["accept_ui_drafts"] = false;
+        }
+        if (!("verify_qa" in $$source)) {
+            this["verify_qa"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SystemOneFeatures instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SystemOneFeatures {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SystemOneFeatures($$parsedSource as Partial<SystemOneFeatures>);
+    }
+}
+
+/**
+ * TaskBinding specifies model and options for a specific translation role
+ */
+export class TaskBinding {
+    /**
+     * "gemini", "openai", "google", "mock", or plugin name
+     */
+    "provider": string;
+
+    /**
+     * e.g. "gemini-2.5-pro", "gpt-4o", etc.
+     */
+    "model": string;
+
+    /**
+     * optional sampling temperature
+     */
+    "temperature"?: number;
+
+    /**
+     * optional token limit
+     */
+    "max_tokens"?: number;
+
+    /** Creates a new TaskBinding instance. */
+    constructor($$source: Partial<TaskBinding> = {}) {
+        if (!("provider" in $$source)) {
+            this["provider"] = "";
+        }
+        if (!("model" in $$source)) {
+            this["model"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TaskBinding instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TaskBinding {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TaskBinding($$parsedSource as Partial<TaskBinding>);
+    }
+}
+
+/**
+ * TasksConfig manages Hermes-style task routing across different models
+ */
+export class TasksConfig {
+    /**
+     * Narrative / Complex dialogue
+     */
+    "primary_translation": TaskBinding;
+
+    /**
+     * UI, items, skills, bulk short text
+     */
+    "fast_translation": TaskBinding;
+
+    /**
+     * Route lines shorter than MaxShortLength to FastTranslation
+     */
+    "auto_route_short_text": boolean;
+
+    /**
+     * Character length threshold (default: 60)
+     */
+    "max_short_length": number;
+
+    /** Creates a new TasksConfig instance. */
+    constructor($$source: Partial<TasksConfig> = {}) {
+        if (!("primary_translation" in $$source)) {
+            this["primary_translation"] = (new TaskBinding());
+        }
+        if (!("fast_translation" in $$source)) {
+            this["fast_translation"] = (new TaskBinding());
+        }
+        if (!("auto_route_short_text" in $$source)) {
+            this["auto_route_short_text"] = false;
+        }
+        if (!("max_short_length" in $$source)) {
+            this["max_short_length"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TasksConfig instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TasksConfig {
+        const $$createField0_0 = $$createType6;
+        const $$createField1_0 = $$createType6;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("primary_translation" in $$parsedSource) {
+            $$parsedSource["primary_translation"] = $$createField0_0($$parsedSource["primary_translation"]);
+        }
+        if ("fast_translation" in $$parsedSource) {
+            $$parsedSource["fast_translation"] = $$createField1_0($$parsedSource["fast_translation"]);
+        }
+        return new TasksConfig($$parsedSource as Partial<TasksConfig>);
     }
 }
 
@@ -224,3 +412,8 @@ export class TranslationDonePayload {
 // Private type creation functions
 const $$createType0 = model$0.TextEntry.createFrom;
 const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = $Create.Map($Create.Any, $Create.Any);
+const $$createType3 = TasksConfig.createFrom;
+const $$createType4 = SystemOneConfig.createFrom;
+const $$createType5 = SystemOneFeatures.createFrom;
+const $$createType6 = TaskBinding.createFrom;

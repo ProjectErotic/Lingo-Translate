@@ -17,5 +17,9 @@ export {
 export {
     QueryResult,
     Settings,
+    SystemOneConfig,
+    SystemOneFeatures,
+    TaskBinding,
+    TasksConfig,
     TranslationDonePayload
 } from "./models.js";

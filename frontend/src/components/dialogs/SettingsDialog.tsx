@@ -137,21 +137,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
     }
     try {
       setRequestingUchsKey(true);
-      let key = "";
-      try {
-        key = await SettingsService.RequestUchsKey();
-      } catch {
-        const res = await fetch("https://api.chanomhub.com/api/uchs/keys/generate", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${settings.chanomhub_token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
-        const data = await res.json();
-        key = data.key;
-      }
+      const key = await SettingsService.RequestUchsKey(settings.chanomhub_token);
       if (key) {
         setSettings((prev) => ({ ...prev, uchs_api_key: key }));
         toast.success("ออก UCHS API Key ผ่าน Chanomhub เรียบร้อยแล้ว!");
@@ -170,22 +156,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
     }
     try {
       setOpeningUchsPortal(true);
-      try {
-        await SettingsService.OpenUchsPortal();
-      } catch {
-        const res = await fetch("https://api.chanomhub.com/api/uchs/sso-url", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${settings.chanomhub_token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
-        const data = await res.json();
-        if (data.redirectUrl) {
-          window.open(data.redirectUrl, "_blank", "noopener,noreferrer");
-        }
-      }
+      await SettingsService.OpenUchsPortal(settings.chanomhub_token);
+      toast.success("เปิด UCHS Portal ในเว็บเบราว์เซอร์แล้ว");
     } catch (err: any) {
       toast.error(err.message || "ไม่สามารถเปิด UCHS Portal ได้");
     } finally {

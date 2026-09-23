@@ -3,6 +3,8 @@
 
 export {
     ProviderConfig,
+    ProviderInfo,
     PublishOptions,
+    SystemOneOptions,
     TranslateOptions
 } from "./models.js";

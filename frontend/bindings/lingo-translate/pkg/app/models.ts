@@ -5,6 +5,10 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as time$0 from "../../../time/models.js";
+
 /**
  * ProviderConfig holds configuration for constructing a translator provider
  */
@@ -16,6 +20,7 @@ export class ProviderConfig {
     "api_key": string;
     "model": string;
     "base_url": string;
+    "timeout"?: time$0.Duration;
 
     /** Creates a new ProviderConfig instance. */
     constructor($$source: Partial<ProviderConfig> = {}) {
@@ -45,35 +50,63 @@ export class ProviderConfig {
 }
 
 /**
+ * ProviderInfo represents metadata about an available translation provider
+ */
+export class ProviderInfo {
+    "name": string;
+    "display_name": string;
+    "description"?: string;
+    "is_custom": boolean;
+    "base_url"?: string;
+    "default_model"?: string;
+    "available_models"?: string[];
+
+    /** Creates a new ProviderInfo instance. */
+    constructor($$source: Partial<ProviderInfo> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("display_name" in $$source)) {
+            this["display_name"] = "";
+        }
+        if (!("is_custom" in $$source)) {
+            this["is_custom"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ProviderInfo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ProviderInfo {
+        const $$createField6_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("available_models" in $$parsedSource) {
+            $$parsedSource["available_models"] = $$createField6_0($$parsedSource["available_models"]);
+        }
+        return new ProviderInfo($$parsedSource as Partial<ProviderInfo>);
+    }
+}
+
+/**
  * PublishOptions configures translation mod publishing to Chanomhub
  */
 export class PublishOptions {
-    "game_dir": string;
-    "slug": string;
+    "workspace"?: string;
+    "patch_file"?: string;
+    "game_dir"?: string;
+    "slug"?: string;
     "token": string;
-    "language": string;
-    "api_base": string;
-    "storage_url": string;
+    "language"?: string;
+    "credit_to"?: string;
+    "api_base"?: string;
+    "storage_url"?: string;
 
     /** Creates a new PublishOptions instance. */
     constructor($$source: Partial<PublishOptions> = {}) {
-        if (!("game_dir" in $$source)) {
-            this["game_dir"] = "";
-        }
-        if (!("slug" in $$source)) {
-            this["slug"] = "";
-        }
         if (!("token" in $$source)) {
             this["token"] = "";
-        }
-        if (!("language" in $$source)) {
-            this["language"] = "";
-        }
-        if (!("api_base" in $$source)) {
-            this["api_base"] = "";
-        }
-        if (!("storage_url" in $$source)) {
-            this["storage_url"] = "";
         }
 
         Object.assign(this, $$source);
@@ -139,10 +172,10 @@ export class SystemOneOptions {
  */
 export class TranslateOptions {
     "provider": ProviderConfig;
-    "fast_provider"?: ProviderConfig;
+    "fast_provider"?: ProviderConfig | null;
     "auto_route_short"?: boolean;
     "max_short_len"?: number;
-    "system_one"?: SystemOneOptions;
+    "system_one"?: SystemOneOptions | null;
     "source_lang": string;
     "target_lang": string;
     "batch_size": number;
@@ -152,6 +185,22 @@ export class TranslateOptions {
      * "all", "untranslated", or file path
      */
     "scope": string;
+    "stream"?: boolean;
+
+    /**
+     * "json" (default) or "line"
+     */
+    "format"?: string;
+
+    /**
+     * e.g. "standard", "nsfw", "vn_romance", "fantasy_rpg", etc.
+     */
+    "style"?: string;
+
+    /**
+     * Custom system prompt instruction
+     */
+    "prompt"?: string;
 
     /** Creates a new TranslateOptions instance. */
     constructor($$source: Partial<TranslateOptions> = {}) {
@@ -181,21 +230,26 @@ export class TranslateOptions {
      * Creates a new TranslateOptions instance from a string or object.
      */
     static createFrom($$source: any = {}): TranslateOptions {
-        const $$createField0_0 = $$createType0;
+        const $$createField0_0 = $$createType1;
+        const $$createField1_0 = $$createType2;
+        const $$createField4_0 = $$createType4;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("provider" in $$parsedSource) {
             $$parsedSource["provider"] = $$createField0_0($$parsedSource["provider"]);
         }
-        if ("fast_provider" in $$parsedSource && $$parsedSource["fast_provider"]) {
-            $$parsedSource["fast_provider"] = $$createField0_0($$parsedSource["fast_provider"]);
+        if ("fast_provider" in $$parsedSource) {
+            $$parsedSource["fast_provider"] = $$createField1_0($$parsedSource["fast_provider"]);
         }
-        if ("system_one" in $$parsedSource && $$parsedSource["system_one"]) {
-            $$parsedSource["system_one"] = SystemOneOptions.createFrom($$parsedSource["system_one"]);
+        if ("system_one" in $$parsedSource) {
+            $$parsedSource["system_one"] = $$createField4_0($$parsedSource["system_one"]);
         }
         return new TranslateOptions($$parsedSource as Partial<TranslateOptions>);
     }
 }
 
 // Private type creation functions
-const $$createType0 = ProviderConfig.createFrom;
-
+const $$createType0 = $Create.Array($Create.Any);
+const $$createType1 = ProviderConfig.createFrom;
+const $$createType2 = $Create.Nullable($$createType1);
+const $$createType3 = SystemOneOptions.createFrom;
+const $$createType4 = $Create.Nullable($$createType3);

@@ -10,7 +10,10 @@ import { Create as $Create } from "@wailsio/runtime";
  */
 export class PublishResult {
     "success": boolean;
+    "mod_id"?: number;
+    "status"?: string;
     "download_url": string;
+    "sha256"?: string;
     "file_size_bytes": number;
     "message": string;
 

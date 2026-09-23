@@ -61,19 +61,19 @@ jobs:
             VER=$(cat VERSION | tr -d '[:space:]')
             TAG="v${VER}"
             
-            # Fetch remote tags to check existence
-            git fetch --tags --force
-            if git rev-parse "$TAG" >/dev/null 2>&1 || git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+            # Check if GitHub Release already exists for this tag
+            RELEASE_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/${TAG}")
+            if [ "$RELEASE_HTTP_CODE" = "200" ]; then
               if [ "${{ inputs.force_release }}" = "true" ]; then
                 IS_RELEASE="true"
-                echo "Tag $TAG exists, but force_release is enabled. Proceeding with release."
+                echo "Release for $TAG already exists, but force_release is enabled. Proceeding with release."
               else
                 IS_RELEASE="false"
-                echo "Tag $TAG already exists on remote. Skipping automated GitHub Release (will only upload artifacts)."
+                echo "GitHub Release for $TAG already exists on remote. Skipping automated GitHub Release (will only upload artifacts)."
               fi
             else
               IS_RELEASE="true"
-              echo "New version detected in main: $VER (Tag $TAG does not exist yet). Will create release."
+              echo "No existing GitHub Release for $TAG (HTTP $RELEASE_HTTP_CODE). Will create release."
             fi
           fi
 
@@ -186,6 +186,8 @@ jobs:
     name: Publish GitHub Release
     needs: [check-and-test, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -239,5 +241,6 @@ jobs:
           prerelease: ${{ contains(needs.check-and-test.outputs.version, '-alpha') || contains(needs.check-and-test.outputs.version, '-beta') || contains(needs.check-and-test.outputs.version, '-rc') }}
           body_path: release_notes.md
           files: release_dist/*
+          token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -54,8 +54,14 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    refreshCurrentProject();
-  }, [refreshCurrentProject]);
+    refreshCurrentProject().then(() => {
+      ProjectService.Current().then((proj) => {
+        if (proj && location.pathname === "/") {
+          navigate("/editor");
+        }
+      }).catch(() => {});
+    });
+  }, [refreshCurrentProject, navigate, location.pathname]);
 
   // Open a workspace from file path
   const handleOpenWorkspacePath = async (wsPath: string) => {

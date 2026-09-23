@@ -2,6 +2,9 @@ package main
 
 import (
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
@@ -23,6 +26,47 @@ func main() {
 	translationService := NewTranslationService(session)
 	deployService := NewDeployService(session)
 	settingsService := NewSettingsService()
+
+	// Auto-open workspace or game folder passed via CLI arguments
+	if len(os.Args) > 1 {
+		var targetPath string
+		var engine string
+		for i := 1; i < len(os.Args); i++ {
+			arg := os.Args[i]
+			if arg == "-p" || arg == "--path" {
+				if i+1 < len(os.Args) {
+					targetPath = os.Args[i+1]
+					i++
+				}
+			} else if arg == "-e" || arg == "--engine" {
+				if i+1 < len(os.Args) {
+					engine = os.Args[i+1]
+					i++
+				}
+			} else if !strings.HasPrefix(arg, "-") && targetPath == "" {
+				targetPath = arg
+			}
+		}
+
+		if targetPath != "" {
+			if fi, err := os.Stat(targetPath); err == nil {
+				if fi.IsDir() {
+					wsPath := filepath.Join(targetPath, "workspace.nst")
+					if _, err := os.Stat(wsPath); err == nil {
+						_, _ = projectService.OpenWorkspace(wsPath)
+					} else {
+						var engines []string
+						if engine != "" {
+							engines = append(engines, engine)
+						}
+						_, _ = projectService.CreateFromGame(targetPath, wsPath, "Japanese", "Thai", engines...)
+					}
+				} else if strings.HasSuffix(targetPath, ".nst") {
+					_, _ = projectService.OpenWorkspace(targetPath)
+				}
+			}
+		}
+	}
 
 	app := application.New(application.Options{
 		Name:        "lingo-desktop",

@@ -8,6 +8,7 @@ import {
   Button,
   Input,
   Progress,
+  ModelSelect,
 } from "@/ui";
 import {
   TranslationService,
@@ -17,7 +18,7 @@ import type { TranslationDonePayload, Settings } from "@bindings/lingo-translate
 import type { TranslationProgress } from "@bindings/lingo-translate/pkg/model";
 import { Events } from "@wailsio/runtime";
 import { toast } from "sonner";
-import { Languages, Loader2, Play, XCircle, Cpu, Zap } from "lucide-react";
+import { Languages, Loader2, Play, XCircle, Cpu, Zap, ShieldAlert, Database } from "lucide-react";
 import { fetchProviders, BUILTIN_PROVIDERS, type ProviderInfo } from "@/lib/providers";
 
 interface TranslateDialogProps {
@@ -46,6 +47,16 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
   const [batchSize, setBatchSize] = useState(10);
   const [concurrency, setConcurrency] = useState(4);
 
+  // Fallback and Task routing states
+  const [fallbackEnabled, setFallbackEnabled] = useState(false);
+  const [fallbackProvider, setFallbackProvider] = useState("gemini");
+  const [fallbackModel, setFallbackModel] = useState("gemini-3.8-flash");
+
+  // Context & Memory states
+  const [translationStyle, setTranslationStyle] = useState("standard");
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [useMemoryCache, setUseMemoryCache] = useState(true);
+
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState<TranslationProgress | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -73,12 +84,25 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
           setBatchSize(s.default_batch_size || 10);
           setConcurrency(s.default_concurrency || 4);
 
+          // Fallback defaults from settings
+          setFallbackEnabled((s.tasks as any)?.enable_fallback ?? false);
+          setFallbackProvider((s.tasks as any)?.fallback_translation?.provider || "gemini");
+          setFallbackModel((s.tasks as any)?.fallback_translation?.model || "gemini-3.8-flash");
+
+          // Memory & Context defaults
+          setUseMemoryCache((s as any).enable_memory_cache ?? true);
+          setTranslationStyle((s as any).translation_style || "standard");
+          setCustomPrompt((s as any).context_lore || "");
+
           // Resolve API key & baseURL for active provider
           if (defaultProv === "gemini") {
             setApiKey(s.gemini_api_key || "");
           } else if (defaultProv === "openai") {
             setApiKey(s.openai_api_key || "");
             setBaseURL(s.openai_base_url || "");
+          } else if (defaultProv === "uchs") {
+            setApiKey(s.uchs_api_key || "");
+            setBaseURL("https://ilms.uchs-th.com/v1");
           } else if (defaultProv === "google") {
             setApiKey(s.google_api_key || "");
           } else if (s.plugin_keys && s.plugin_keys[defaultProv]) {
@@ -98,7 +122,7 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
   // Update apiKey and model options dynamically when provider changes
   const handleProviderChange = (newProvider: string) => {
     setProvider(newProvider);
-    const pInfo = providers.find((p) => p.name === newProvider);
+    const pInfo = providers.find((p: ProviderInfo) => p.name === newProvider);
 
     SettingsService.GetSettings().then((s) => {
       let key = "";
@@ -111,6 +135,9 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
         } else if (newProvider === "openai") {
           key = s.openai_api_key || "";
           base = s.openai_base_url || base;
+        } else if (newProvider === "uchs") {
+          key = s.uchs_api_key || "";
+          base = "https://ilms.uchs-th.com/v1";
         } else if (newProvider === "google") {
           key = s.google_api_key || "";
         } else if (s.plugin_keys && s.plugin_keys[newProvider]) {
@@ -197,6 +224,22 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
         startOpts.auto_route_short = false;
       }
 
+      if (fallbackEnabled && fallbackProvider) {
+        const fbInfo = providers.find((p: ProviderInfo) => p.name === fallbackProvider);
+        startOpts.fallback_provider = {
+          name: fallbackProvider,
+          model: fallbackModel,
+          api_key: "",
+          base_url: fbInfo?.base_url || "",
+        };
+      }
+
+      startOpts.enable_memory_cache = useMemoryCache;
+      startOpts.style = translationStyle;
+      if (customPrompt.trim()) {
+        startOpts.prompt = customPrompt.trim();
+      }
+
       if (enableSystemOne && settings?.system_one) {
         startOpts.system_one = {
           enabled: true,
@@ -237,7 +280,7 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
     }
   };
 
-  const currentProviderInfo = providers.find((p) => p.name === provider);
+  const currentProviderInfo = providers.find((p: ProviderInfo) => p.name === provider);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -256,13 +299,14 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
               <label className="block text-xs font-semibold text-muted-foreground mb-1">
                 Translation Service
               </label>
+              {/* @ui-allow-native */}
               <select
                 value={provider}
                 onChange={(e) => handleProviderChange(e.target.value)}
                 disabled={isRunning}
                 className="w-full h-8 rounded-md border border-input bg-card px-2 text-sm text-foreground focus:outline-none focus:border-primary disabled:opacity-50"
               >
-                {providers.map((p) => (
+                {providers.map((p: ProviderInfo) => (
                   <option key={p.name} value={p.name}>
                     {p.display_name} {p.is_custom ? "(Plugin)" : ""}
                   </option>
@@ -271,22 +315,18 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
             </div>
             <div>
               <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                Model Name
+                Model Selection
               </label>
-              <Input
-                list="provider-model-options"
+              <ModelSelect
+                providerInfo={currentProviderInfo}
                 value={modelName}
-                onChange={(e) => setModelName(e.target.value)}
+                onChange={setModelName}
                 disabled={isRunning}
-                placeholder={currentProviderInfo?.default_model || "e.g. gpt-4o-mini"}
+                placeholder={currentProviderInfo?.default_model || "e.g. gpt-6-sol, gemini-3.8-flash"}
+                showChips={true}
+                apiKey={apiKey}
+                baseURL={baseURL || currentProviderInfo?.base_url}
               />
-              {currentProviderInfo?.available_models && (
-                <datalist id="provider-model-options">
-                  {currentProviderInfo.available_models.map((m) => (
-                    <option key={m} value={m} />
-                  ))}
-                </datalist>
-              )}
             </div>
           </div>
 
@@ -395,6 +435,139 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
                 onChange={(e) => setConcurrency(parseInt(e.target.value) || 4)}
                 disabled={isRunning}
               />
+            </div>
+          </div>
+
+          {/* Automatic Fallback Failover */}
+          <div className="rounded-lg border border-border/70 bg-card/60 p-3 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-foreground">
+                {/* @ui-allow-native */}
+                <input
+                  type="checkbox"
+                  checked={fallbackEnabled}
+                  onChange={(e) => setFallbackEnabled(e.target.checked)}
+                  disabled={isRunning}
+                  className="rounded border-border text-primary focus:ring-primary"
+                />
+                <span className="flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                  Automatic Fallback Failover
+                </span>
+              </label>
+              <span className="text-[10px] text-muted-foreground">
+                Auto-switches provider on error (429, timeout)
+              </span>
+            </div>
+
+            {fallbackEnabled && (
+              <div className="grid grid-cols-2 gap-3 pt-1 border-t border-border/40">
+                <div>
+                  <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                    Fallback Provider
+                  </label>
+                  {/* @ui-allow-native */}
+                  <select
+                    value={fallbackProvider}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFallbackProvider(val);
+                      const fInfo = providers.find((p: ProviderInfo) => p.name === val);
+                      setFallbackModel(fInfo?.default_model || (fInfo?.available_models?.[0] || ""));
+                    }}
+                    disabled={isRunning}
+                    className="w-full h-8 rounded-md border border-input bg-card px-2 text-xs text-foreground focus:outline-none focus:border-primary disabled:opacity-50"
+                  >
+                    {providers.filter((p: ProviderInfo) => p.name !== provider).map((p: ProviderInfo) => (
+                      <option key={p.name} value={p.name}>
+                        {p.display_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                    Fallback Model
+                  </label>
+                  <ModelSelect
+                    providerInfo={providers.find((p: ProviderInfo) => p.name === fallbackProvider)}
+                    value={fallbackModel}
+                    onChange={setFallbackModel}
+                    disabled={isRunning}
+                    showChips={false}
+                    apiKey={
+                      settings
+                        ? fallbackProvider === "uchs"
+                          ? settings.uchs_api_key
+                          : fallbackProvider === "gemini"
+                          ? settings.gemini_api_key
+                          : fallbackProvider === "openai"
+                          ? settings.openai_api_key
+                          : settings.plugin_keys?.[fallbackProvider] || ""
+                        : ""
+                    }
+                    baseURL={providers.find((p: ProviderInfo) => p.name === fallbackProvider)?.base_url}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Translation Memory Cache & Context */}
+          <div className="rounded-lg border border-border/70 bg-card/60 p-3 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-foreground">
+                {/* @ui-allow-native */}
+                <input
+                  type="checkbox"
+                  checked={useMemoryCache}
+                  onChange={(e) => setUseMemoryCache(e.target.checked)}
+                  disabled={isRunning}
+                  className="rounded border-border text-primary focus:ring-primary"
+                />
+                <span className="flex items-center gap-1.5">
+                  <Database className="w-3.5 h-3.5 text-emerald-400" />
+                  Translation Memory (TM Cache)
+                </span>
+              </label>
+              <span className="text-[10px] text-muted-foreground">
+                Reuses exact match lines from SQLite
+              </span>
+            </div>
+
+            <div className="space-y-2 pt-1 border-t border-border/40">
+              <div>
+                <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                  Localization Tone &amp; Persona
+                </label>
+                {/* @ui-allow-native */}
+                <select
+                  value={translationStyle}
+                  onChange={(e) => setTranslationStyle(e.target.value)}
+                  disabled={isRunning}
+                  className="w-full h-8 rounded-md border border-input bg-card px-2.5 text-xs text-foreground focus:outline-none focus:border-primary disabled:opacity-50"
+                >
+                  <option value="standard">Standard Game Localization (Balanced)</option>
+                  <option value="nsfw">NSFW / Adult / Erotic (Uncensored 18+)</option>
+                  <option value="vn_romance">Visual Novel &amp; Romance (Intimacy &amp; Dialogue)</option>
+                  <option value="fantasy_rpg">Fantasy RPG &amp; Medieval</option>
+                  <option value="comedy">Comedy &amp; Playful</option>
+                  <option value="dan_uncensored">Anti-Censorship Jailbreak</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                  Custom Game Lore &amp; Directives (Optional)
+                </label>
+                <Input
+                  className="h-8 text-xs"
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  disabled={isRunning}
+                  placeholder="e.g. Hero is named Ken, heroine is Yuna, fantasy academy setting"
+                />
+              </div>
             </div>
           </div>
 

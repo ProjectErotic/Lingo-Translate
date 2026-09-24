@@ -12,3 +12,5 @@ export * from "./dialog";
 export * from "./dropdown-menu";
 export * from "./progress";
 export * from "./tokenized-text";
+export * from "./select";
+export * from "./model-select";

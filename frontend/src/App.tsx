@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, useNavigate, useLocation } from "react-route
 import {
   ProjectService,
   EntryService,
+  SettingsService,
 } from "@bindings/lingo-translate/cmd/lingo-desktop";
 import type { Project } from "@bindings/lingo-translate/pkg/model";
 import type { WorkspaceStats } from "@bindings/lingo-translate/pkg/storage";
@@ -19,6 +20,7 @@ import { SettingsDialog } from "@/components/dialogs/SettingsDialog";
 import { AboutDialog } from "@/components/dialogs/AboutDialog";
 import { Toaster, toast } from "sonner";
 import { CommandProvider, useCommands } from "@/lib/commands";
+import { applyThemeSettings } from "@/lib/theme";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -27,6 +29,17 @@ function AppContent() {
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [stats, setStats] = useState<WorkspaceStats | null>(null);
   const [selectedFile, setSelectedFile] = useState<string>("all");
+
+  // Load theme and preferences on mount
+  useEffect(() => {
+    SettingsService.GetSettings()
+      .then((s) => {
+        if (s) {
+          applyThemeSettings(s.theme, (s as any).density, (s as any).font_size);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Dialog open states
   const [openGameDialog, setOpenGameDialog] = useState(false);

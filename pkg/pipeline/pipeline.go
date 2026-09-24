@@ -22,15 +22,17 @@ type Config struct {
 }
 
 type Pipeline struct {
-	cfg            Config
-	store          *storage.Storage
-	translator     translator.Translator
-	fastTranslator translator.Translator
-	autoRouteShort bool
-	maxShortLen    int
-	decisionEngine decision.DecisionEngine
-	acceptUIDrafts bool
-	verifyQA       bool
+	cfg                Config
+	store              *storage.Storage
+	translator         translator.Translator
+	fastTranslator     translator.Translator
+	fallbackTranslator translator.Translator
+	autoRouteShort     bool
+	maxShortLen        int
+	decisionEngine     decision.DecisionEngine
+	acceptUIDrafts     bool
+	verifyQA           bool
+	enableMemoryCache  bool
 }
 
 func New(store *storage.Storage, trans translator.Translator, cfg Config) *Pipeline {
@@ -48,10 +50,11 @@ func New(store *storage.Storage, trans translator.Translator, cfg Config) *Pipel
 	}
 
 	return &Pipeline{
-		cfg:         cfg,
-		store:       store,
-		translator:  trans,
-		maxShortLen: 60,
+		cfg:               cfg,
+		store:             store,
+		translator:        trans,
+		maxShortLen:       60,
+		enableMemoryCache: true,
 	}
 }
 
@@ -64,6 +67,16 @@ func (p *Pipeline) SetTaskRouting(fastTrans translator.Translator, autoRoute boo
 	} else {
 		p.maxShortLen = 60
 	}
+}
+
+// SetFallbackTranslator sets a fallback translation engine used if the primary provider fails
+func (p *Pipeline) SetFallbackTranslator(fallbackTrans translator.Translator) {
+	p.fallbackTranslator = fallbackTrans
+}
+
+// SetMemoryCache enables or disables Translation Memory cache lookup
+func (p *Pipeline) SetMemoryCache(enabled bool) {
+	p.enableMemoryCache = enabled
 }
 
 // SetSystemOne configures the auxiliary System One decision engine (TypeSafe AI Jev)
@@ -115,7 +128,7 @@ func (p *Pipeline) Run(ctx context.Context, entries []model.TextEntry, opts tran
 			continue
 		}
 
-		if p.store != nil {
+		if p.enableMemoryCache && p.store != nil {
 			cached, hit, err := p.store.GetCache(entries[i].Source, opts.SourceLang, opts.TargetLang)
 			if err == nil && hit && cached != "" {
 				entries[i].Target = cached
@@ -251,6 +264,19 @@ func (p *Pipeline) Run(ctx context.Context, entries []model.TextEntry, opts tran
 						break
 					}
 					time.Sleep(p.cfg.RetryDelay)
+				}
+
+				// If primary failed and a fallback translator is configured, attempt fallback translation
+				if err != nil && p.fallbackTranslator != nil {
+					for fbAttempt := 0; fbAttempt <= p.cfg.Retries; fbAttempt++ {
+						fbResults, fbErr := p.fallbackTranslator.Translate(ctx, maskedTexts, opts)
+						if fbErr == nil {
+							transResults = fbResults
+							err = nil
+							break
+						}
+						time.Sleep(p.cfg.RetryDelay)
+					}
 				}
 
 				if err != nil {

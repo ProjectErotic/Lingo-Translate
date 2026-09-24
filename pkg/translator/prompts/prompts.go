@@ -112,19 +112,19 @@ func LoadTemplate(nameOrPath string) (string, bool) {
 
 // ResolvePrompt resolves the complete system prompt using style, template files, or custom prompt
 func ResolvePrompt(styleOrPath, sourceLang, targetLang, customPrompt string) string {
-	// If customPrompt directly given, use it with technical rules
+	normalized := Persona(strings.ToLower(strings.TrimSpace(styleOrPath)))
+	if normalized == "" {
+		normalized = PersonaStandard
+	}
+
+	// If customPrompt directly given, use it with the selected persona
 	if customPrompt != "" {
-		return BuildCustomPrompt(PersonaStandard, sourceLang, targetLang, customPrompt)
+		return BuildCustomPrompt(normalized, sourceLang, targetLang, customPrompt)
 	}
 
 	// If styleOrPath matches an external template file, use its content
 	if content, found := LoadTemplate(styleOrPath); found {
-		return BuildCustomPrompt(Persona(styleOrPath), sourceLang, targetLang, content)
-	}
-
-	normalized := Persona(strings.ToLower(strings.TrimSpace(styleOrPath)))
-	if normalized == "" {
-		normalized = PersonaStandard
+		return BuildCustomPrompt(normalized, sourceLang, targetLang, content)
 	}
 
 	return BuildSystemPrompt(normalized, sourceLang, targetLang)

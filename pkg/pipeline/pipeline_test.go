@@ -192,3 +192,76 @@ func (m *mockRefusalDecisionEngine) Choice(ctx context.Context, input string, ch
 func (m *mockRefusalDecisionEngine) Score(ctx context.Context, input, criteria string) (float64, error) {
 	return 0.1, nil
 }
+
+type failingTranslator struct{}
+
+func (f *failingTranslator) Name() string { return "failing" }
+func (f *failingTranslator) Translate(ctx context.Context, texts []string, opts translator.Options) ([]translator.Result, error) {
+	return nil, context.DeadlineExceeded
+}
+
+func TestPipelineFallbackTranslator(t *testing.T) {
+	tempDir := t.TempDir()
+	store, _ := storage.Open(filepath.Join(tempDir, "fallback_test.nst"))
+	defer store.Close()
+
+	primaryFailing := &failingTranslator{}
+	fallbackMock := mock.New("[Fallback] ")
+
+	pipe := New(store, primaryFailing, Config{BatchSize: 10, Concurrency: 1, Retries: 1, RetryDelay: 1})
+	pipe.SetFallbackTranslator(fallbackMock)
+
+	entries := []model.TextEntry{
+		{
+			ID:     "fb_1",
+			Source: "Hero awakens",
+		},
+	}
+
+	opts := translator.Options{SourceLang: "en", TargetLang: "th"}
+	results, err := pipe.Run(context.Background(), entries, opts, nil)
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+
+	if len(results) != 1 || results[0].Target != "[Fallback] Hero awakens" {
+		t.Errorf("Expected fallback translation '[Fallback] Hero awakens', got: %v", results[0].Target)
+	}
+	if results[0].Status != model.StatusTranslated {
+		t.Errorf("Expected StatusTranslated, got: %s", results[0].Status)
+	}
+}
+
+func TestPipelineMemoryCacheToggle(t *testing.T) {
+	tempDir := t.TempDir()
+	store, _ := storage.Open(filepath.Join(tempDir, "cache_toggle_test.nst"))
+	defer store.Close()
+
+	trans := mock.New("[Trans] ")
+	pipe := New(store, trans, Config{BatchSize: 10, Concurrency: 1})
+
+	// Pre-seed cache
+	_ = store.SetCache("Hello", "สวัสดี (Cached)", "en", "th", "tm_cache")
+
+	entries := []model.TextEntry{
+		{ID: "c1", Source: "Hello"},
+	}
+	opts := translator.Options{SourceLang: "en", TargetLang: "th"}
+
+	// 1. With cache enabled (default)
+	pipe.SetMemoryCache(true)
+	res1, _ := pipe.Run(context.Background(), entries, opts, nil)
+	if res1[0].Target != "สวัสดี (Cached)" {
+		t.Errorf("Expected cached target, got: %s", res1[0].Target)
+	}
+
+	// 2. With cache disabled
+	pipe.SetMemoryCache(false)
+	entries2 := []model.TextEntry{
+		{ID: "c2", Source: "Hello"},
+	}
+	res2, _ := pipe.Run(context.Background(), entries2, opts, nil)
+	if res2[0].Target != "[Trans] Hello" {
+		t.Errorf("Expected fresh translation when cache disabled, got: %s", res2[0].Target)
+	}
+}

@@ -32,14 +32,15 @@ type Definition struct {
 func GetSearchDirs() []string {
 	var dirs []string
 
-	if customEnv := os.Getenv("NST_PROVIDERS_DIR"); customEnv != "" {
+	if customEnv := os.Getenv("LINGO_PROVIDERS_DIR"); customEnv != "" {
 		dirs = append(dirs, customEnv)
+	} else if legacyEnv := os.Getenv("NST_PROVIDERS_DIR"); legacyEnv != "" {
+		dirs = append(dirs, legacyEnv)
 	}
 
-	// 1. User home directory ~/.nst/providers and ~/.nst (secure, completely outside git)
+	// 1. User home directory ~/.lingo/providers
 	if homeDir, err := os.UserHomeDir(); err == nil {
-		dirs = append(dirs, filepath.Join(homeDir, ".nst", "providers"))
-		dirs = append(dirs, filepath.Join(homeDir, ".nst"))
+		dirs = append(dirs, filepath.Join(homeDir, ".lingo", "providers"))
 	}
 
 	// 2. User config directory ~/.config/lingo/providers
@@ -47,16 +48,22 @@ func GetSearchDirs() []string {
 		dirs = append(dirs, filepath.Join(cfgDir, "lingo", "providers"))
 	}
 
-	// 3. Current working directory ./providers
+	// 3. Backward compatibility ~/.nst/providers and ~/.nst
+	if homeDir, err := os.UserHomeDir(); err == nil {
+		dirs = append(dirs, filepath.Join(homeDir, ".nst", "providers"))
+		dirs = append(dirs, filepath.Join(homeDir, ".nst"))
+	}
+
+	// 4. Current working directory ./providers
 	dirs = append(dirs, "providers")
 
 	return dirs
 }
 
-// GetUserConfigDir returns the default user directory for storing custom provider configs (~/.nst/providers)
+// GetUserConfigDir returns the default user directory for storing custom provider configs (~/.lingo/providers)
 func GetUserConfigDir() (string, error) {
 	if homeDir, err := os.UserHomeDir(); err == nil {
-		dir := filepath.Join(homeDir, ".nst", "providers")
+		dir := filepath.Join(homeDir, ".lingo", "providers")
 		if err := os.MkdirAll(dir, 0700); err == nil {
 			return dir, nil
 		}

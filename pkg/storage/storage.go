@@ -564,3 +564,16 @@ func (s *Storage) GetPrimaryTranslator() (string, error) {
 	return "", nil
 }
 
+// ClearCache removes all entries from Translation Memory
+func (s *Storage) ClearCache() error {
+	_, err := s.db.Exec(`DELETE FROM tm_cache`)
+	return err
+}
+
+// GetCacheCount returns the number of cached items in Translation Memory
+func (s *Storage) GetCacheCount() (int, error) {
+	var count int
+	err := s.db.QueryRow(`SELECT COUNT(*) FROM tm_cache`).Scan(&count)
+	return count, err
+}
+

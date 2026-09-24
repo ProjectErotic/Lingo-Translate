@@ -98,6 +98,18 @@ func TestStorageWorkflow(t *testing.T) {
 	if err != nil || !found || cached != "สวัสดี" {
 		t.Errorf("Expected cache hit 'สวัสดี', got '%s', found=%v, err=%v", cached, found, err)
 	}
+	count, err := s.GetCacheCount()
+	if err != nil || count != 1 {
+		t.Errorf("Expected cache count 1, got %d, err=%v", count, err)
+	}
+
+	if err := s.ClearCache(); err != nil {
+		t.Fatalf("ClearCache failed: %v", err)
+	}
+	count, _ = s.GetCacheCount()
+	if count != 0 {
+		t.Errorf("Expected cache count 0 after clear, got %d", count)
+	}
 
 	// 5. Test Stats
 	stats, err := s.Stats()

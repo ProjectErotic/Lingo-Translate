@@ -64,3 +64,21 @@ func (e *EntryService) Stats() (storage.WorkspaceStats, error) {
 	}
 	return ws.Stats()
 }
+
+// ClearCache removes all cached items from Translation Memory
+func (e *EntryService) ClearCache() error {
+	ws, err := e.session.GetWorkspace()
+	if err != nil {
+		return err
+	}
+	return ws.ClearCache()
+}
+
+// CacheCount returns the count of items in Translation Memory
+func (e *EntryService) CacheCount() (int, error) {
+	ws, err := e.session.GetWorkspace()
+	if err != nil {
+		return 0, err
+	}
+	return ws.GetCacheCount()
+}

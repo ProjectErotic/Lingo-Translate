@@ -89,6 +89,11 @@ export class Settings {
      * "dark"
      */
     "theme": string;
+    "density"?: string;
+    "font_size"?: string;
+    "context_lore"?: string;
+    "translation_style"?: string;
+    "enable_memory_cache"?: boolean;
 
     /**
      * Task-Based AI Routing & Auxiliary System One (Hermes-Style Architecture)
@@ -136,6 +141,21 @@ export class Settings {
         }
         if (!("theme" in $$source)) {
             this["theme"] = "";
+        }
+        if ("density" in $$source) {
+            this["density"] = $$source["density"];
+        }
+        if ("font_size" in $$source) {
+            this["font_size"] = $$source["font_size"];
+        }
+        if ("context_lore" in $$source) {
+            this["context_lore"] = $$source["context_lore"];
+        }
+        if ("translation_style" in $$source) {
+            this["translation_style"] = $$source["translation_style"];
+        }
+        if ("enable_memory_cache" in $$source) {
+            this["enable_memory_cache"] = $$source["enable_memory_cache"];
         }
         if (!("tasks" in $$source)) {
             this["tasks"] = (new TasksConfig());
@@ -352,6 +372,16 @@ export class TasksConfig {
      */
     "max_short_length": number;
 
+    /**
+     * Fallback engine if primary/fast fails
+     */
+    "fallback_translation": TaskBinding;
+
+    /**
+     * Enable automatic failover to fallback provider
+     */
+    "enable_fallback": boolean;
+
     /** Creates a new TasksConfig instance. */
     constructor($$source: Partial<TasksConfig> = {}) {
         if (!("primary_translation" in $$source)) {
@@ -366,6 +396,12 @@ export class TasksConfig {
         if (!("max_short_length" in $$source)) {
             this["max_short_length"] = 0;
         }
+        if (!("fallback_translation" in $$source)) {
+            this["fallback_translation"] = (new TaskBinding());
+        }
+        if (!("enable_fallback" in $$source)) {
+            this["enable_fallback"] = false;
+        }
 
         Object.assign(this, $$source);
     }
@@ -376,12 +412,16 @@ export class TasksConfig {
     static createFrom($$source: any = {}): TasksConfig {
         const $$createField0_0 = $$createType6;
         const $$createField1_0 = $$createType6;
+        const $$createField4_0 = $$createType6;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("primary_translation" in $$parsedSource) {
             $$parsedSource["primary_translation"] = $$createField0_0($$parsedSource["primary_translation"]);
         }
         if ("fast_translation" in $$parsedSource) {
             $$parsedSource["fast_translation"] = $$createField1_0($$parsedSource["fast_translation"]);
+        }
+        if ("fallback_translation" in $$parsedSource) {
+            $$parsedSource["fallback_translation"] = $$createField4_0($$parsedSource["fallback_translation"]);
         }
         return new TasksConfig($$parsedSource as Partial<TasksConfig>);
     }

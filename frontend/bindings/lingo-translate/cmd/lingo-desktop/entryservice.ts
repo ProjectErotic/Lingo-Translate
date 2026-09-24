@@ -47,6 +47,21 @@ export function Update(id: string, target: string): $CancellablePromise<void> {
     return $Call.ByID(3801854380, id, target);
 }
 
+/**
+ * ClearCache invalidates and removes all cached translation memory entries
+ */
+export function ClearCache(): $CancellablePromise<void> {
+    return $Call.ByID(2473052216);
+}
+
+/**
+ * CacheCount returns total number of cached entries in translation memory
+ */
+export function CacheCount(): $CancellablePromise<number> {
+    return $Call.ByID(1146324924);
+}
+
+
 // Private type creation functions
 const $$createType0 = storage$0.FileSummary.createFrom;
 const $$createType1 = $Create.Array($$createType0);

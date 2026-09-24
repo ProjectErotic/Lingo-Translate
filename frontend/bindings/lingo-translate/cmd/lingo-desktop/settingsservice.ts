@@ -8,6 +8,7 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as app$0 from "../../pkg/app/models.js";
+import * as custom$0 from "../../pkg/translator/custom/models.js";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -54,7 +55,49 @@ export function SaveSettings(settings: $models.Settings): $CancellablePromise<vo
     return $Call.ByID(2662658340, settings);
 }
 
+/**
+ * SaveCustomProvider saves or updates a custom provider plugin definition (~/.lingo/providers/<name>.json)
+ */
+export function SaveCustomProvider(def: custom$0.Definition): $CancellablePromise<void> {
+    return $Call.ByID(399115247, def);
+}
+
+/**
+ * DeleteCustomProvider removes a custom provider plugin definition
+ */
+export function DeleteCustomProvider(name: string): $CancellablePromise<void> {
+    return $Call.ByID(3056671089, name);
+}
+
+/**
+ * ListCustomProviders returns all saved custom provider definitions
+ */
+export function ListCustomProviders(): $CancellablePromise<custom$0.Definition[]> {
+    return $Call.ByID(3278852807).then(($result: any) => {
+        return $$createType3($result);
+    });
+}
+
+/**
+ * FetchRemoteModels queries an OpenAI-compatible or Ollama endpoint for available models
+ */
+export function FetchRemoteModels(baseURL: string, apiKey: string): $CancellablePromise<string[]> {
+    return $Call.ByID(731427188, baseURL, apiKey).then(($result: any) => {
+        return $$createType4($result);
+    });
+}
+
+/**
+ * TestCustomProvider verifies connection by translating a sample word
+ */
+export function TestCustomProvider(def: custom$0.Definition): $CancellablePromise<string> {
+    return $Call.ByID(2007263554, def);
+}
+
 // Private type creation functions
 const $$createType0 = app$0.ProviderInfo.createFrom;
 const $$createType1 = $Create.Array($$createType0);
 const $$createType2 = $models.Settings.createFrom;
+const $$createType3 = $Create.Array(custom$0.Definition.createFrom);
+const $$createType4 = $Create.Array($Create.Any);
+

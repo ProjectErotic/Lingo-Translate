@@ -1,8 +1,11 @@
 package main
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -221,5 +224,56 @@ func TestDesktopServices(t *testing.T) {
 	}
 	if len(projectsAfterRemove) != 0 {
 		t.Errorf("Expected 0 projects after remove, got %d", len(projectsAfterRemove))
+	}
+}
+
+func TestFetchRemoteModels(t *testing.T) {
+	// 1. Mock server that requires auth and returns OpenAI format
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/models" {
+			auth := r.Header.Get("Authorization")
+			if auth != "Bearer valid-test-key" {
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte(`{"error":{"message":"Authentication Error, No api key passed in."}}`))
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":[{"id":"model-alpha"},{"id":"model-beta"}]}`))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer server.Close()
+
+	tempDir := t.TempDir()
+	settingsPath := filepath.Join(tempDir, "settings.json")
+	settingsSvc := NewSettingsService(settingsPath)
+
+	// Test with valid key
+	models, err := settingsSvc.FetchRemoteModels(server.URL+"/v1", "valid-test-key")
+	if err != nil {
+		t.Fatalf("FetchRemoteModels failed with valid key: %v", err)
+	}
+	if len(models) != 2 || models[0] != "model-alpha" || models[1] != "model-beta" {
+		t.Fatalf("Unexpected models returned: %v", models)
+	}
+
+	// Test with missing key: must return clean auth error, not 404 from /api/tags
+	_, err = settingsSvc.FetchRemoteModels(server.URL+"/v1", "")
+	if err == nil {
+		t.Fatalf("Expected error for missing key, got nil")
+	}
+	if !strings.Contains(err.Error(), "API key required") && !strings.Contains(err.Error(), "Authentication Error") {
+		t.Errorf("Expected auth error message, got: %v", err)
+	}
+
+	// Test with invalid key: must return HTTP 401 failure
+	_, err = settingsSvc.FetchRemoteModels(server.URL+"/v1", "wrong-key")
+	if err == nil {
+		t.Fatalf("Expected error for wrong key, got nil")
+	}
+	if !strings.Contains(err.Error(), "401") {
+		t.Errorf("Expected 401 error, got: %v", err)
 	}
 }

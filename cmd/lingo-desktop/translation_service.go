@@ -73,6 +73,31 @@ func (t *TranslationService) Start(opts app.TranslateOptions) error {
 				opts.FastProvider.BaseURL = fastBase
 			}
 		}
+		if opts.FallbackProvider == nil && s.Tasks.EnableFallback && s.Tasks.FallbackTranslation.Provider != "" {
+			fbKey, fbBase := s.ResolveProviderAuth(s.Tasks.FallbackTranslation.Provider)
+			opts.FallbackProvider = &app.ProviderConfig{
+				Name:    s.Tasks.FallbackTranslation.Provider,
+				Model:   s.Tasks.FallbackTranslation.Model,
+				APIKey:  fbKey,
+				BaseURL: fbBase,
+			}
+		} else if opts.FallbackProvider != nil && opts.FallbackProvider.APIKey == "" {
+			fbKey, fbBase := s.ResolveProviderAuth(opts.FallbackProvider.Name)
+			opts.FallbackProvider.APIKey = fbKey
+			if opts.FallbackProvider.BaseURL == "" {
+				opts.FallbackProvider.BaseURL = fbBase
+			}
+		}
+		if opts.EnableMemoryCache == nil {
+			enableCache := s.EnableMemoryCache
+			opts.EnableMemoryCache = &enableCache
+		}
+		if opts.Style == "" && s.TranslationStyle != "" {
+			opts.Style = s.TranslationStyle
+		}
+		if opts.Prompt == "" && s.ContextLore != "" {
+			opts.Prompt = s.ContextLore
+		}
 		if opts.SystemOne == nil && s.SystemOne.Enabled {
 			opts.SystemOne = &app.SystemOneOptions{
 				Enabled:             s.SystemOne.Enabled,

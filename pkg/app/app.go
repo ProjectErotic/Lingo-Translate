@@ -52,20 +52,22 @@ type SystemOneOptions struct {
 
 // TranslateOptions configures a batch translation run
 type TranslateOptions struct {
-	Provider       ProviderConfig    `json:"provider"`
-	FastProvider   *ProviderConfig   `json:"fast_provider,omitempty"`
-	AutoRouteShort bool              `json:"auto_route_short,omitempty"`
-	MaxShortLen    int               `json:"max_short_len,omitempty"`
-	SystemOne      *SystemOneOptions `json:"system_one,omitempty"`
-	SourceLang     string            `json:"source_lang"`
-	TargetLang     string            `json:"target_lang"`
-	BatchSize      int               `json:"batch_size"`
-	Concurrency    int               `json:"concurrency"`
-	Scope          string            `json:"scope"` // "all", "untranslated", or file path
-	Stream         bool              `json:"stream,omitempty"`
-	Format         string            `json:"format,omitempty"` // "json" (default) or "line"
-	Style          string            `json:"style,omitempty"`  // e.g. "standard", "nsfw", "vn_romance", "fantasy_rpg", etc.
-	Prompt         string            `json:"prompt,omitempty"` // Custom system prompt instruction
+	Provider          ProviderConfig    `json:"provider"`
+	FastProvider      *ProviderConfig   `json:"fast_provider,omitempty"`
+	FallbackProvider  *ProviderConfig   `json:"fallback_provider,omitempty"`
+	EnableMemoryCache *bool             `json:"enable_memory_cache,omitempty"`
+	AutoRouteShort    bool              `json:"auto_route_short,omitempty"`
+	MaxShortLen       int               `json:"max_short_len,omitempty"`
+	SystemOne         *SystemOneOptions `json:"system_one,omitempty"`
+	SourceLang        string            `json:"source_lang"`
+	TargetLang        string            `json:"target_lang"`
+	BatchSize         int               `json:"batch_size"`
+	Concurrency       int               `json:"concurrency"`
+	Scope             string            `json:"scope"` // "all", "untranslated", or file path
+	Stream            bool              `json:"stream,omitempty"`
+	Format            string            `json:"format,omitempty"` // "json" (default) or "line"
+	Style             string            `json:"style,omitempty"`  // e.g. "standard", "nsfw", "vn_romance", "fantasy_rpg", etc.
+	Prompt            string            `json:"prompt,omitempty"` // Custom system prompt instruction
 }
 
 // PublishOptions configures translation mod publishing to Chanomhub
@@ -380,6 +382,20 @@ func (w *Workspace) UpdateEntry(id, target string, status model.TranslationStatu
 	return w.store.UpdateEntryTarget(id, target, status, translator)
 }
 
+// ClearCache clears all Translation Memory entries for this workspace
+func (w *Workspace) ClearCache() error {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.store.ClearCache()
+}
+
+// GetCacheCount returns the number of cached items in Translation Memory
+func (w *Workspace) GetCacheCount() (int, error) {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.store.GetCacheCount()
+}
+
 // Translate runs a translation batch pipeline
 func (w *Workspace) Translate(ctx context.Context, opts TranslateOptions, progressCb func(model.TranslationProgress)) error {
 	w.mu.RLock()
@@ -422,6 +438,18 @@ func (w *Workspace) Translate(ctx context.Context, opts TranslateOptions, progre
 		BatchSize:   batchSize,
 		Concurrency: concurrency,
 	})
+
+	// Configure Memory Cache lookup
+	if opts.EnableMemoryCache != nil {
+		pipe.SetMemoryCache(*opts.EnableMemoryCache)
+	}
+
+	// Configure Fallback Translator (if primary fails)
+	if opts.FallbackProvider != nil && opts.FallbackProvider.Name != "" {
+		if fbTrans, err := CreateTranslator(*opts.FallbackProvider); err == nil {
+			pipe.SetFallbackTranslator(fbTrans)
+		}
+	}
 
 	// Configure Fast / Bulk Task Routing (Hermes Architecture)
 	if opts.FastProvider != nil && opts.FastProvider.Name != "" {
@@ -633,19 +661,104 @@ func ListAvailableProviders() []ProviderInfo {
 		{
 			Name:            "gemini",
 			DisplayName:     "Google Gemini AI",
-			Description:     "Official Google Gemini models (Gemini 2.5 Flash, Gemini 1.5 Pro)",
+			Description:     "Official Google Gemini models (Gemini 3.8 Flash, 3.5 Flash Lite, 2.5 Flash/Pro)",
 			IsCustom:        false,
-			DefaultModel:    "gemini-2.5-flash",
-			AvailableModels: []string{"gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash", "gemini-1.5-pro"},
+			DefaultModel:    "gemini-3.8-flash",
+			AvailableModels: []string{
+				"gemini-3.8-flash",
+				"gemini-3.5-flash-lite",
+				"gemini-3.1-pro-preview",
+				"gemini-2.5-flash",
+				"gemini-2.5-pro",
+				"gemini-2.0-flash",
+			},
 		},
 		{
 			Name:            "openai",
 			DisplayName:     "OpenAI / Compatible",
-			Description:     "Standard OpenAI API or local LLM server (Ollama, LM Studio)",
+			Description:     "Official OpenAI API (GPT-6 Sol/Luna/Astra, o4-mini, o3-mini)",
 			IsCustom:        false,
 			BaseURL:         "https://api.openai.com/v1",
-			DefaultModel:    "gpt-4o-mini",
-			AvailableModels: []string{"gpt-4o-mini", "gpt-4o", "o3-mini", "gpt-3.5-turbo"},
+			DefaultModel:    "gpt-6-sol",
+			AvailableModels: []string{
+				"gpt-6-sol",
+				"gpt-6-luna",
+				"gpt-6-astra",
+				"o4-mini",
+				"o3-mini",
+				"gpt-4o",
+				"gpt-4o-mini",
+			},
+		},
+		{
+			Name:            "uchs",
+			DisplayName:     "UCHS AI Infrastructure",
+			Description:     "High-throughput cluster gateway powered by LiteLLM (DeepSeek V4.1 Flash, DeepSeek Pro)",
+			IsCustom:        false,
+			BaseURL:         "https://ilms.uchs-th.com/v1",
+			DefaultModel:    "deepseek-v4.1-flash",
+			AvailableModels: []string{
+				"deepseek-v4.1-flash",
+				"deepseek-v4-pro-0813",
+				"deepseek-v4-flash-0731",
+			},
+		},
+		{
+			Name:            "deepseek",
+			DisplayName:     "DeepSeek Official",
+			Description:     "Direct DeepSeek API (V4.1 Flash, Chat V3, Reasoner R1)",
+			IsCustom:        false,
+			BaseURL:         "https://api.deepseek.com/v1",
+			DefaultModel:    "deepseek-v4.1-flash",
+			AvailableModels: []string{"deepseek-v4.1-flash", "deepseek-chat", "deepseek-reasoner"},
+		},
+		{
+			Name:            "groq",
+			DisplayName:     "Groq Cloud (Ultra-Fast)",
+			Description:     "High-speed LPU inference engine",
+			IsCustom:        false,
+			BaseURL:         "https://api.groq.com/openai/v1",
+			DefaultModel:    "llama-3.3-70b-versatile",
+			AvailableModels: []string{
+				"llama-3.3-70b-versatile",
+				"llama-3.1-8b-instant",
+				"deepseek-r1-distill-llama-70b",
+				"mixtral-8x7b-32768",
+				"gemma2-9b-it",
+			},
+		},
+		{
+			Name:            "ollama",
+			DisplayName:     "Ollama (Local LLM)",
+			Description:     "Local LLM server running on your machine",
+			IsCustom:        false,
+			BaseURL:         "http://localhost:11434/v1",
+			DefaultModel:    "deepseek-r1:8b",
+			AvailableModels: []string{
+				"deepseek-r1:8b",
+				"llama3.3:latest",
+				"qwen2.5:latest",
+				"mistral:latest",
+				"phi4:latest",
+				"gemma2:latest",
+			},
+		},
+		{
+			Name:            "openrouter",
+			DisplayName:     "OpenRouter Multi-Provider",
+			Description:     "Unified gateway to hundreds of models",
+			IsCustom:        false,
+			BaseURL:         "https://openrouter.ai/api/v1",
+			DefaultModel:    "google/gemini-3.8-flash",
+			AvailableModels: []string{
+				"google/gemini-3.8-flash",
+				"openai/gpt-6-sol",
+				"anthropic/claude-opus-5-5-20260922",
+				"deepseek/deepseek-v4.1-flash",
+				"google/gemini-2.5-flash",
+				"anthropic/claude-3.7-sonnet",
+				"meta-llama/llama-3.3-70b-instruct",
+			},
 		},
 		{
 			Name:        "google",
@@ -713,12 +826,76 @@ func CreateTranslator(cfg ProviderConfig) (translator.Translator, error) {
 			Model:   model,
 			Timeout: cfg.Timeout,
 		}), nil
+	case "deepseek":
+		baseURL := cfg.BaseURL
+		if baseURL == "" {
+			baseURL = "https://api.deepseek.com/v1"
+		}
+		model := cfg.Model
+		if model == "" {
+			model = "deepseek-chat"
+		}
+		return openai.New(openai.Config{
+			APIKey:  cfg.APIKey,
+			BaseURL: baseURL,
+			Model:   model,
+			Timeout: cfg.Timeout,
+		}), nil
+	case "groq":
+		baseURL := cfg.BaseURL
+		if baseURL == "" {
+			baseURL = "https://api.groq.com/openai/v1"
+		}
+		model := cfg.Model
+		if model == "" {
+			model = "llama-3.3-70b-versatile"
+		}
+		return openai.New(openai.Config{
+			APIKey:  cfg.APIKey,
+			BaseURL: baseURL,
+			Model:   model,
+			Timeout: cfg.Timeout,
+		}), nil
+	case "ollama":
+		baseURL := cfg.BaseURL
+		if baseURL == "" {
+			baseURL = "http://localhost:11434/v1"
+		}
+		model := cfg.Model
+		if model == "" {
+			model = "deepseek-r1:8b"
+		}
+		apiKey := cfg.APIKey
+		if apiKey == "" {
+			apiKey = "ollama"
+		}
+		return openai.New(openai.Config{
+			APIKey:  apiKey,
+			BaseURL: baseURL,
+			Model:   model,
+			Timeout: cfg.Timeout,
+		}), nil
+	case "openrouter":
+		baseURL := cfg.BaseURL
+		if baseURL == "" {
+			baseURL = "https://openrouter.ai/api/v1"
+		}
+		model := cfg.Model
+		if model == "" {
+			model = "google/gemini-3.8-flash"
+		}
+		return openai.New(openai.Config{
+			APIKey:  cfg.APIKey,
+			BaseURL: baseURL,
+			Model:   model,
+			Timeout: cfg.Timeout,
+		}), nil
 	default:
-		// Attempt to load external custom provider definition (e.g. from ~/.config/lingo/providers/*.json or ./providers/*.json)
+		// Attempt to load external custom provider definition (e.g. from ~/.lingo/providers/*.json or ./providers/*.json)
 		if customDef, err := custom.Find(cfg.Name); err == nil {
 			return custom.NewTranslator(*customDef, cfg.APIKey, cfg.Model, cfg.BaseURL)
 		}
-		return nil, fmt.Errorf("unsupported provider: %s (available built-in: mock, gemini, openai, google, or custom providers in providers/)", cfg.Name)
+		return nil, fmt.Errorf("unsupported provider: %s (available built-in: mock, gemini, openai, google, uchs, deepseek, groq, ollama, openrouter, or custom plugins in providers/)", cfg.Name)
 	}
 }
 

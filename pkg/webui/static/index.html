@@ -860,17 +860,23 @@
             <div class="modal-form-group">
               <label>Google Gemini Default Model</label>
               <select id="set-model-gemini">
-                <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Recommended)</option>
-                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                <option value="gemini-1.5-pro">gemini-1.5-pro (High reasoning)</option>
+                <option value="gemini-3.8-flash">gemini-3.8-flash (Fast & Recommended)</option>
+                <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Ultra-low latency)</option>
+                <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Deep reasoning)</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash (Stable)</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro (High quality)</option>
               </select>
             </div>
             <div class="modal-form-group">
               <label>OpenAI Default Model</label>
               <select id="set-model-openai">
-                <option value="gpt-4o-mini">gpt-4o-mini (Cost-effective)</option>
-                <option value="gpt-4o">gpt-4o (High quality)</option>
-                <option value="o3-mini">o3-mini</option>
+                <option value="gpt-6-sol">gpt-6-sol (Flagship Balanced)</option>
+                <option value="gpt-6-luna">gpt-6-luna (Fast & Lightweight)</option>
+                <option value="gpt-6-astra">gpt-6-astra (Deep Reasoning & Multimodal)</option>
+                <option value="o4-mini">o4-mini (Advanced Reasoning)</option>
+                <option value="o3-mini">o3-mini (Fast Reasoning)</option>
+                <option value="gpt-4o">gpt-4o (Legacy)</option>
+                <option value="gpt-4o-mini">gpt-4o-mini (Legacy)</option>
               </select>
             </div>
             <!-- Dynamic Plugin Models Section -->
@@ -879,7 +885,7 @@
             </div>
             <div class="modal-form-group">
               <label>Custom / Other Model Name</label>
-              <input type="text" id="set-model-custom" placeholder="e.g. qwen2.5:14b, llama3.3, claude-3-5-haiku">
+              <input type="text" id="set-model-custom" placeholder="e.g. deepseek-v4.1-flash, claude-opus-5-5-20260922">
             </div>
           </div>
 
@@ -917,7 +923,7 @@
           <!-- Panel 4: Plugins -->
           <div class="settings-panel" id="tab-settings-plugins">
             <div class="settings-header-title">External Translation Plugins</div>
-            <div class="settings-section-desc">External provider definitions detected in <code>./providers/*.json</code> and <code>~/.config/nst/providers/*.json</code>.</div>
+            <div class="settings-section-desc">External provider definitions detected in <code>./providers/*.json</code> and <code>~/.lingo/providers/*.json</code>.</div>
             <div id="settings-plugins-list" style="display: flex; flex-direction: column; gap: 8px;">
               <!-- Dynamically populated -->
             </div>
@@ -1048,8 +1054,8 @@
         activeProvider: 'gemini',
         baseUrl: '',
         models: {
-          gemini: 'gemini-2.5-flash',
-          openai: 'gpt-4o-mini',
+          gemini: 'gemini-3.8-flash',
+          openai: 'gpt-6-sol',
           custom: ''
         },
         keys: {
@@ -1073,8 +1079,8 @@
       if (document.getElementById('set-base-url')) document.getElementById('set-base-url').value = s.baseUrl || '';
 
       if (s.models) {
-        if (document.getElementById('set-model-gemini')) document.getElementById('set-model-gemini').value = s.models.gemini || 'gemini-2.5-flash';
-        if (document.getElementById('set-model-openai')) document.getElementById('set-model-openai').value = s.models.openai || 'gpt-4o-mini';
+        if (document.getElementById('set-model-gemini')) document.getElementById('set-model-gemini').value = s.models.gemini || 'gemini-3.8-flash';
+        if (document.getElementById('set-model-openai')) document.getElementById('set-model-openai').value = s.models.openai || 'gpt-6-sol';
         if (document.getElementById('set-model-custom')) document.getElementById('set-model-custom').value = s.models.custom || '';
 
         document.querySelectorAll('.plugin-model-input').forEach(input => {
@@ -1353,10 +1359,10 @@
       const urlInput = document.getElementById('dlg-baseurl');
 
       if (p === 'gemini') {
-        if (modelInput) modelInput.value = (s.models && s.models.gemini) || 'gemini-2.5-flash';
+        if (modelInput) modelInput.value = (s.models && s.models.gemini) || 'gemini-3.8-flash';
         if (keyInput) keyInput.value = (s.keys && s.keys.gemini) || '';
       } else if (p === 'openai') {
-        if (modelInput) modelInput.value = (s.models && s.models.openai) || 'gpt-4o-mini';
+        if (modelInput) modelInput.value = (s.models && s.models.openai) || 'gpt-6-sol';
         if (keyInput) keyInput.value = (s.keys && s.keys.openai) || '';
         if (urlInput) urlInput.value = s.baseUrl || '';
       } else if (found && found.is_custom) {

@@ -27,7 +27,7 @@ type Client struct {
 
 func New(cfg Config) *Client {
 	if cfg.Model == "" {
-		cfg.Model = "gemini-2.5-flash"
+		cfg.Model = "gemini-3.8-flash"
 	}
 	if cfg.Timeout == 0 {
 		cfg.Timeout = 60 * time.Second

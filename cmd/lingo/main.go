@@ -215,7 +215,7 @@ func handleTranslate(args []string) {
 		envKey = os.Getenv("NST_API_KEY") // legacy fallback
 	}
 	apiKey := fs.String("api-key", envKey, "API Key (or env LINGO_API_KEY)")
-	modelName := fs.String("model", "", "Model name (e.g. gemini-2.5-flash, gpt-4o-mini, deepseek-v4-pro-0813)")
+	modelName := fs.String("model", "", "Model name (e.g. gemini-3.8-flash, gpt-6-sol, deepseek-v4.1-flash)")
 	baseURL := fs.String("base-url", "", "Custom Base URL for OpenAI/Ollama")
 	srcLang := fs.String("source", "Japanese", "Source language")
 	tgtLang := fs.String("target", "Thai", "Target language")

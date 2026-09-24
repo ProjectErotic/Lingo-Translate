@@ -120,7 +120,7 @@ fi
 
 # Install CLI binary
 echo "📦 Installing CLI binary to ${INSTALL_DIR}/lingo..."
-cp "$SOURCE_BIN" "${INSTALL_DIR}/lingo"
+cp --remove-destination "$SOURCE_BIN" "${INSTALL_DIR}/lingo" 2>/dev/null || (rm -f "${INSTALL_DIR}/lingo" && cp "$SOURCE_BIN" "${INSTALL_DIR}/lingo")
 chmod 755 "${INSTALL_DIR}/lingo"
 
 # Create backward-compat symlink 'nst' -> 'lingo'
@@ -130,7 +130,7 @@ echo "🔗 Created backward compatibility symlink: ${INSTALL_DIR}/nst -> lingo"
 # Install Desktop binary if available
 if [ -n "$SOURCE_DESKTOP_BIN" ] && [ -f "$SOURCE_DESKTOP_BIN" ]; then
     echo "📦 Installing Desktop GUI binary to ${INSTALL_DIR}/lingo-desktop..."
-    cp "$SOURCE_DESKTOP_BIN" "${INSTALL_DIR}/lingo-desktop"
+    cp --remove-destination "$SOURCE_DESKTOP_BIN" "${INSTALL_DIR}/lingo-desktop" 2>/dev/null || (rm -f "${INSTALL_DIR}/lingo-desktop" && cp "$SOURCE_DESKTOP_BIN" "${INSTALL_DIR}/lingo-desktop")
     chmod 755 "${INSTALL_DIR}/lingo-desktop"
     ln -sf "${INSTALL_DIR}/lingo-desktop" "${INSTALL_DIR}/nst-desktop"
 fi

@@ -20,6 +20,7 @@ import {
   HelpCircle,
   LayoutGrid,
   Edit3,
+  BookOpen,
 } from "lucide-react";
 
 interface MenubarProps {
@@ -33,6 +34,7 @@ interface MenubarProps {
   onOpenMerge: () => void;
   onOpenPublish: () => void;
   onOpenAbout: () => void;
+  onOpenUserGuide: () => void;
   currentRoute: string;
   onNavigate: (route: string) => void;
 }
@@ -48,6 +50,7 @@ export const Menubar: React.FC<MenubarProps> = ({
   onOpenMerge,
   onOpenPublish,
   onOpenAbout,
+  onOpenUserGuide,
   currentRoute,
   onNavigate,
 }) => {
@@ -56,7 +59,7 @@ export const Menubar: React.FC<MenubarProps> = ({
       {/* Brand logo / tag */}
       <div className="flex items-center gap-1.5 px-2 mr-1 text-primary font-bold tracking-wide">
         <span className="w-2 h-2 rounded-full bg-primary" />
-        NST
+        Lingo
       </div>
 
       {/* File Menu */}
@@ -181,12 +184,32 @@ export const Menubar: React.FC<MenubarProps> = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={onOpenUserGuide}>
+            <BookOpen className="w-3.5 h-3.5 mr-2 text-primary" />
+            User Guide (คู่มือการใช้งาน)…
+            <DropdownMenuShortcut>F1</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onOpenAbout}>
-            <HelpCircle className="w-3.5 h-3.5 mr-2 text-primary" />
+            <HelpCircle className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
             About Lingo Translate…
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Right Quick Actions */}
+      <div className="ml-auto flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onOpenUserGuide}
+          className="h-6 px-2 text-xs font-normal text-muted-foreground hover:text-foreground gap-1.5"
+          title="User Guide / คู่มือการใช้งาน (F1)"
+        >
+          <BookOpen className="w-3.5 h-3.5 text-primary" />
+          <span className="hidden sm:inline">คู่มือการใช้งาน</span>
+        </Button>
+      </div>
     </div>
   );
 };

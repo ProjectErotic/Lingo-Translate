@@ -22,18 +22,21 @@ import {
   Layers,
   ArrowRight,
   Clock,
+  BookOpen,
 } from "lucide-react";
 
 interface ProjectsPageProps {
   onOpenProject: (workspacePath: string) => void;
   onExtractNew: () => void;
   onBrowseWorkspace: () => void;
+  onOpenUserGuide: () => void;
 }
 
 export const ProjectsPage: React.FC<ProjectsPageProps> = ({
   onOpenProject,
   onExtractNew,
   onBrowseWorkspace,
+  onOpenUserGuide,
 }) => {
   const [projects, setProjects] = useState<ProjectEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +86,15 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
           <Button
             variant="outline"
             size="sm"
+            onClick={onOpenUserGuide}
+            className="gap-1.5"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-primary" />
+            คู่มือการใช้งาน
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onBrowseWorkspace}
             className="gap-1.5"
           >
@@ -117,7 +129,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
           <p className="text-xs text-muted-foreground max-w-sm mb-6">
             Get started by extracting text strings from your game folder or opening an existing .nst workspace file.
           </p>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap justify-center">
             <Button onClick={onExtractNew} className="gap-2">
               <FolderOpen className="w-4 h-4" />
               Open Game Folder…
@@ -129,6 +141,14 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
             >
               <FileCode className="w-4 h-4 text-primary" />
               Open Workspace…
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onOpenUserGuide}
+              className="gap-2"
+            >
+              <BookOpen className="w-4 h-4 text-primary" />
+              คู่มือการใช้งาน (Guide)
             </Button>
           </div>
         </div>

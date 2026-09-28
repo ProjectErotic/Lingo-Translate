@@ -18,6 +18,7 @@ import { UpdateVersionDialog } from "@/components/dialogs/UpdateVersionDialog";
 import { PublishDialog } from "@/components/dialogs/PublishDialog";
 import { SettingsDialog } from "@/components/dialogs/SettingsDialog";
 import { AboutDialog } from "@/components/dialogs/AboutDialog";
+import { UserGuideDialog } from "@/components/dialogs/UserGuideDialog";
 import { Toaster, toast } from "sonner";
 import { CommandProvider, useCommands } from "@/lib/commands";
 import { applyThemeSettings } from "@/lib/theme";
@@ -49,6 +50,7 @@ function AppContent() {
   const [publishDialog, setPublishDialog] = useState(false);
   const [settingsDialog, setSettingsDialog] = useState(false);
   const [aboutDialog, setAboutDialog] = useState(false);
+  const [userGuideDialog, setUserGuideDialog] = useState(false);
 
   // Refresh current project and stats
   const refreshCurrentProject = useCallback(async () => {
@@ -181,10 +183,16 @@ function AppContent() {
         run: () => setPublishDialog(true),
       },
       {
+        id: "app.user-guide",
+        title: "User Guide / คู่มือการใช้งาน",
+        category: "Help",
+        keybinding: "F1",
+        run: () => setUserGuideDialog(true),
+      },
+      {
         id: "app.about",
         title: "About Lingo Translate",
         category: "Help",
-        keybinding: "F1",
         run: () => setAboutDialog(true),
       },
     ],
@@ -207,6 +215,7 @@ function AppContent() {
         onOpenMerge={() => setMergeDialog(true)}
         onOpenPublish={() => setPublishDialog(true)}
         onOpenAbout={() => setAboutDialog(true)}
+        onOpenUserGuide={() => setUserGuideDialog(true)}
         currentRoute={location.pathname}
         onNavigate={(route) => navigate(route)}
       />
@@ -221,6 +230,7 @@ function AppContent() {
                 onOpenProject={handleOpenWorkspacePath}
                 onExtractNew={() => setOpenGameDialog(true)}
                 onBrowseWorkspace={handleBrowseWorkspace}
+                onOpenUserGuide={() => setUserGuideDialog(true)}
               />
             }
           />
@@ -289,6 +299,11 @@ function AppContent() {
       <AboutDialog
         open={aboutDialog}
         onOpenChange={setAboutDialog}
+      />
+
+      <UserGuideDialog
+        open={userGuideDialog}
+        onOpenChange={setUserGuideDialog}
       />
     </div>
   );

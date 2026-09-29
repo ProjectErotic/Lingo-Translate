@@ -24,6 +24,7 @@ import {
   Clock,
   BookOpen,
 } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface ProjectsPageProps {
   onOpenProject: (workspacePath: string) => void;
@@ -38,6 +39,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
   onBrowseWorkspace,
   onOpenUserGuide,
 }) => {
+  const { t } = useI18n();
   const [projects, setProjects] = useState<ProjectEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +63,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
     e.stopPropagation();
     try {
       await ProjectService.RemoveFromRegistry(path);
-      toast.success("Project removed from list");
+      toast.success(t("projects.toast_removed"));
       loadProjects();
     } catch (err: any) {
       toast.error(`Failed to remove project: ${err?.message || err}`);
@@ -75,10 +77,10 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
         <div>
           <h1 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
             <Layers className="w-5 h-5 text-primary" />
-            Translation Projects
+            {t("projects.title")}
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Manage your game translation workspaces and track progress
+            {t("projects.subtitle")}
           </p>
         </div>
 
@@ -90,7 +92,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
             className="gap-1.5"
           >
             <BookOpen className="w-3.5 h-3.5 text-primary" />
-            คู่มือการใช้งาน
+            {t("projects.btn_user_guide")}
           </Button>
           <Button
             variant="outline"
@@ -99,7 +101,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
             className="gap-1.5"
           >
             <FileCode className="w-3.5 h-3.5 text-primary" />
-            Open Workspace…
+            {t("projects.btn_open_workspace")}
           </Button>
           <Button
             size="sm"
@@ -107,7 +109,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
             className="gap-1.5 shadow-md shadow-primary/20"
           >
             <FolderOpen className="w-3.5 h-3.5" />
-            Open Game Folder…
+            {t("projects.btn_open_game")}
           </Button>
         </div>
       </div>
@@ -115,7 +117,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
       {/* Projects Grid or Empty State */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground">
-          Loading registered projects…
+          {t("projects.loading")}
         </div>
       ) : projects.length === 0 ? (
         /* Empty State */
@@ -124,15 +126,15 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
             <Layers className="w-8 h-8" />
           </div>
           <h3 className="text-base font-semibold text-foreground mb-1">
-            No projects registered yet
+            {t("projects.empty_title")}
           </h3>
           <p className="text-xs text-muted-foreground max-w-sm mb-6">
-            Get started by extracting text strings from your game folder or opening an existing .nst workspace file.
+            {t("projects.empty_desc")}
           </p>
           <div className="flex gap-3 flex-wrap justify-center">
             <Button onClick={onExtractNew} className="gap-2">
               <FolderOpen className="w-4 h-4" />
-              Open Game Folder…
+              {t("projects.btn_open_game")}
             </Button>
             <Button
               variant="outline"
@@ -140,7 +142,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
               className="gap-2"
             >
               <FileCode className="w-4 h-4 text-primary" />
-              Open Workspace…
+              {t("projects.btn_open_workspace")}
             </Button>
             <Button
               variant="outline"
@@ -148,7 +150,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
               className="gap-2"
             >
               <BookOpen className="w-4 h-4 text-primary" />
-              คู่มือการใช้งาน (Guide)
+              {t("projects.btn_user_guide")}
             </Button>
           </div>
         </div>
@@ -189,7 +191,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="w-3.5 h-3.5 mr-2" />
-                            Remove from List
+                            {t("projects.menu_remove")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -214,7 +216,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
                   <div className="flex items-center justify-between text-xs mb-1.5 font-mono">
                     <span className="text-muted-foreground">
                       {(p.translated_entries || 0).toLocaleString()} /{" "}
-                      {(p.total_entries || 0).toLocaleString()} lines
+                      {(p.total_entries || 0).toLocaleString()} {t("editor.col_target", { lang: "" }).replace(/[()]/g, "").trim()}
                     </span>
                     <span className="font-bold text-emerald-400">
                       {pct.toFixed(1)}%
@@ -228,7 +230,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
                       {new Date(p.last_modified).toLocaleDateString()}
                     </span>
                     <span className="group-hover:text-primary transition-colors flex items-center gap-1">
-                      Open in Editor
+                      {t("projects.menu_open")}
                       <ExternalLink className="w-3 h-3" />
                     </span>
                   </div>

@@ -2,6 +2,7 @@ import React from "react";
 import { Badge, Progress } from "@/ui";
 import type { Project } from "@bindings/lingo-translate/pkg/model";
 import type { WorkspaceStats } from "@bindings/lingo-translate/pkg/storage";
+import { useI18n } from "@/lib/i18n";
 
 interface StatusbarProps {
   project: Project | null;
@@ -9,6 +10,7 @@ interface StatusbarProps {
 }
 
 export const Statusbar: React.FC<StatusbarProps> = ({ project, stats }) => {
+  const { t } = useI18n();
   const percent = stats?.percent || 0;
 
   return (
@@ -30,7 +32,7 @@ export const Statusbar: React.FC<StatusbarProps> = ({ project, stats }) => {
             </span>
           </>
         ) : (
-          <span className="italic text-muted-foreground/70">No project open</span>
+          <span className="italic text-muted-foreground/70">{t("statusbar.no_project")}</span>
         )}
       </div>
 

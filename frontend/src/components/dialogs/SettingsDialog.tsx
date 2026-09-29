@@ -40,7 +40,9 @@ import {
   Code2,
   Plus,
   Play,
+  Globe,
 } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 import { fetchProviders, BUILTIN_PROVIDERS, type ProviderInfo } from "@/lib/providers";
 import { applyThemeSettings } from "@/lib/theme";
 import type { Definition as CustomProviderDef } from "@bindings/lingo-translate/pkg/translator/custom/models.js";
@@ -65,6 +67,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   open,
   onOpenChange,
 }) => {
+  const { t, locale, setLocale, supportedLocales } = useI18n();
   const [activeTab, setActiveTab] = useState<TabType>("appearance");
   const [showKeys, setShowKeys] = useState<{ [key: string]: boolean }>({});
   const [providers, setProviders] = useState<ProviderInfo[]>(BUILTIN_PROVIDERS);
@@ -496,16 +499,60 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             {activeTab === "appearance" && (
               <div className="space-y-5">
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground">Appearance &amp; Layout</h3>
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {locale === "th" ? "ภาษาและรูปลักษณ์ (Language & Appearance)" : "Language & Appearance"}
+                  </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Customize user interface theme, window layout density, and typography scaling.
+                    {locale === "th"
+                      ? "กำหนดภาษาของโปรแกรม ธีมสี ความหนาแน่นของเมนู และขนาดตัวอักษร"
+                      : "Customize interface language, theme mode, window layout density, and typography scaling."}
                   </p>
                 </div>
 
-                {/* Theme Selection */}
+                {/* Interface Language */}
                 <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-primary" />
+                    {t("dialogs.settings.interface_language")}
+                  </label>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {supportedLocales.map((loc) => {
+                      const isSelected = locale === loc.code;
+                      return (
+                        // @ui-allow-native
+                        <button
+                          key={loc.code}
+                          type="button"
+                          onClick={() => {
+                            setLocale(loc.code);
+                            toast.success(loc.code === "th" ? "เปลี่ยนภาษาเป็นภาษาไทยแล้ว" : "Switched language to English");
+                          }}
+                          className={`p-3 rounded-lg border text-left transition-all ${
+                            isSelected
+                              ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/40"
+                              : "border-border bg-card/60 hover:bg-card"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-foreground flex items-center gap-2">
+                              <span>{loc.code === "th" ? "🇹🇭" : "🇺🇸"}</span>
+                              {loc.nativeName} ({loc.name})
+                            </span>
+                            {isSelected && <CheckCircle2 className="w-4 h-4 text-primary" />}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            {loc.code === "th" ? "ตั้งภาษาไทยเป็นภาษาหลักในการแสดงผล" : "Set English as the display language"}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Theme Selection */}
+                <div className="space-y-2 pt-2 border-t border-border/50">
                   <label className="block text-xs font-semibold text-muted-foreground">
-                    Color Theme
+                    {t("dialogs.settings.theme_mode")}
                   </label>
                   <div className="grid grid-cols-2 gap-2.5">
                     {[

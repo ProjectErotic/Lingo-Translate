@@ -9,6 +9,7 @@ import {
   Badge,
 } from "@/ui";
 import { Info, Cpu, Layers, ShieldCheck, Zap } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface AboutDialogProps {
   open: boolean;
@@ -19,26 +20,28 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
   open,
   onOpenChange,
 }) => {
+  const { t } = useI18n();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Info className="w-5 h-5 text-primary" />
-            About Lingo Translate
+            {t("dialogs.about.title")}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-3 border-b border-border pb-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center font-bold text-lg text-primary-foreground shadow-md">
-              NST
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center font-bold text-sm text-primary-foreground shadow-md">
+              Lingo
             </div>
             <div>
               <h2 className="font-bold text-sm text-foreground">
-                Game Translation Suite (Go Edition)
+                Lingo-Translate (Game Translation Suite)
               </h2>
-              <p className="text-[11px] text-muted-foreground">Version {__APP_VERSION__} · Wails v3 Desktop</p>
+              <p className="text-[11px] text-muted-foreground">Version {__APP_VERSION__} · Pure Go &amp; Wails v3</p>
             </div>
           </div>
 
@@ -88,7 +91,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
         </div>
 
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>OK</Button>
+          <Button onClick={() => onOpenChange(false)}>{t("common.close")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -22,6 +22,7 @@ import { UserGuideDialog } from "@/components/dialogs/UserGuideDialog";
 import { Toaster, toast } from "sonner";
 import { CommandProvider, useCommands } from "@/lib/commands";
 import { applyThemeSettings } from "@/lib/theme";
+import { I18nProvider } from "@/lib/i18n";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -312,9 +313,11 @@ function AppContent() {
 export function App() {
   return (
     <HashRouter>
-      <CommandProvider>
-        <AppContent />
-      </CommandProvider>
+      <I18nProvider>
+        <CommandProvider>
+          <AppContent />
+        </CommandProvider>
+      </I18nProvider>
     </HashRouter>
   );
 }

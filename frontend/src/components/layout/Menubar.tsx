@@ -21,7 +21,10 @@ import {
   LayoutGrid,
   Edit3,
   BookOpen,
+  Globe,
+  Check,
 } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface MenubarProps {
   hasOpenProject: boolean;
@@ -54,6 +57,8 @@ export const Menubar: React.FC<MenubarProps> = ({
   currentRoute,
   onNavigate,
 }) => {
+  const { t, locale, setLocale, supportedLocales } = useI18n();
+
   return (
     <div className="h-8 bg-popover border-b border-border flex items-center px-2 text-xs select-none gap-0.5 z-40">
       {/* Brand logo / tag */}
@@ -66,31 +71,31 @@ export const Menubar: React.FC<MenubarProps> = ({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-6 px-2 text-xs font-normal">
-            File
+            {t("menubar.file")}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuItem onClick={onOpenGame}>
             <FolderOpen className="w-3.5 h-3.5 mr-2 text-primary" />
-            Open Game Folder…
+            {t("menubar.open_game")}
             <DropdownMenuShortcut>Ctrl+O</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onOpenWorkspace}>
             <FileCode className="w-3.5 h-3.5 mr-2 text-primary" />
-            Open Workspace File (.nst)…
+            {t("menubar.open_workspace")}
             <DropdownMenuShortcut>Ctrl+Shift+O</DropdownMenuShortcut>
           </DropdownMenuItem>
           {hasOpenProject && (
             <DropdownMenuItem onClick={onCloseProject}>
               <XSquare className="w-3.5 h-3.5 mr-2 text-rose-400" />
-              Close Project
+              {t("menubar.close_project")}
               <DropdownMenuShortcut>Ctrl+W</DropdownMenuShortcut>
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onOpenSettings}>
             <Settings className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-            Settings…
+            {t("menubar.settings")}
             <DropdownMenuShortcut>Ctrl+,</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -105,13 +110,13 @@ export const Menubar: React.FC<MenubarProps> = ({
             disabled={!hasOpenProject}
             className="h-6 px-2 text-xs font-normal disabled:opacity-40"
           >
-            Translate
+            {t("menubar.translate")}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuItem onClick={onOpenTranslate}>
             <Languages className="w-3.5 h-3.5 mr-2 text-primary" />
-            Batch Translate with AI…
+            {t("menubar.batch_translate")}
             <DropdownMenuShortcut>Ctrl+T</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -126,24 +131,24 @@ export const Menubar: React.FC<MenubarProps> = ({
             disabled={!hasOpenProject}
             className="h-6 px-2 text-xs font-normal disabled:opacity-40"
           >
-            Deploy
+            {t("menubar.deploy")}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuItem onClick={onOpenDeploy}>
             <Rocket className="w-3.5 h-3.5 mr-2 text-amber-400" />
-            Deploy to Game…
+            {t("menubar.deploy_to_game")}
             <DropdownMenuShortcut>Ctrl+D</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onOpenMerge}>
             <GitMerge className="w-3.5 h-3.5 mr-2 text-emerald-400" />
-            Smart Merge: Update Game Version…
+            {t("menubar.smart_merge")}
             <DropdownMenuShortcut>Ctrl+M</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onOpenPublish}>
             <Share2 className="w-3.5 h-3.5 mr-2 text-primary" />
-            Publish Mod to Chanomhub…
+            {t("menubar.publish")}
             <DropdownMenuShortcut>Ctrl+P</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -153,7 +158,7 @@ export const Menubar: React.FC<MenubarProps> = ({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-6 px-2 text-xs font-normal">
-            View
+            {t("menubar.tools")}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
@@ -162,7 +167,7 @@ export const Menubar: React.FC<MenubarProps> = ({
             className={currentRoute === "/" ? "bg-muted font-semibold" : ""}
           >
             <LayoutGrid className="w-3.5 h-3.5 mr-2 text-primary" />
-            Projects Library
+            {t("menubar.nav_projects")}
           </DropdownMenuItem>
           {hasOpenProject && (
             <DropdownMenuItem
@@ -170,7 +175,7 @@ export const Menubar: React.FC<MenubarProps> = ({
               className={currentRoute === "/editor" ? "bg-muted font-semibold" : ""}
             >
               <Edit3 className="w-3.5 h-3.5 mr-2 text-emerald-400" />
-              Translation Grid Editor
+              {t("menubar.nav_editor")}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -186,19 +191,52 @@ export const Menubar: React.FC<MenubarProps> = ({
         <DropdownMenuContent align="start">
           <DropdownMenuItem onClick={onOpenUserGuide}>
             <BookOpen className="w-3.5 h-3.5 mr-2 text-primary" />
-            User Guide (คู่มือการใช้งาน)…
+            {t("menubar.user_guide")}
             <DropdownMenuShortcut>F1</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onOpenAbout}>
             <HelpCircle className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-            About Lingo Translate…
+            {t("menubar.about")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       {/* Right Quick Actions */}
       <div className="ml-auto flex items-center gap-1">
+        {/* Language Switcher */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs font-normal text-muted-foreground hover:text-foreground gap-1.5"
+              title="เปลี่ยนภาษา / Switch Language"
+            >
+              <Globe className="w-3.5 h-3.5 text-primary" />
+              <span>{locale === "th" ? "ภาษาไทย" : "English"}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {supportedLocales.map((loc) => (
+              <DropdownMenuItem
+                key={loc.code}
+                onClick={() => setLocale(loc.code)}
+                className="flex items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <span>{loc.code === "th" ? "🇹🇭" : "🇺🇸"}</span>
+                  <span className={locale === loc.code ? "font-semibold text-primary" : ""}>
+                    {loc.nativeName} ({loc.name})
+                  </span>
+                </div>
+                {locale === loc.code && <Check className="w-3.5 h-3.5 text-primary" />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* User Guide Button */}
         <Button
           variant="ghost"
           size="sm"
@@ -207,7 +245,7 @@ export const Menubar: React.FC<MenubarProps> = ({
           title="User Guide / คู่มือการใช้งาน (F1)"
         >
           <BookOpen className="w-3.5 h-3.5 text-primary" />
-          <span className="hidden sm:inline">คู่มือการใช้งาน</span>
+          <span className="hidden sm:inline">{t("projects.btn_user_guide")}</span>
         </Button>
       </div>
     </div>

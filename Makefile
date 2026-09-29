@@ -1,4 +1,4 @@
-.PHONY: all build test clean cross-compile bump install uninstall package
+.PHONY: all build test clean cross-compile bump install uninstall package i18n-calc
 
 BINARY_NAME=lingo
 VERSION ?= $(shell cat VERSION 2>/dev/null || echo "2.0.0")
@@ -18,6 +18,9 @@ desktop:
 
 test:
 	CGO_ENABLED=0 go test -v ./pkg/...
+
+i18n-calc:
+	@cd frontend && bun run scripts/i18n-calc.ts
 
 cross-compile:
 	mkdir -p dist

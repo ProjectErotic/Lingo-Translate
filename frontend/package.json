@@ -11,7 +11,8 @@
     "lint": "tsc --noEmit",
     "test": "vitest run --environment jsdom",
     "audit:ui": "bun run scripts/audit-ui.ts",
-    "check:ui": "bun run scripts/audit-ui.ts --strict"
+    "check:ui": "bun run scripts/audit-ui.ts --strict",
+    "i18n:calc": "bun run scripts/i18n-calc.ts"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.11",

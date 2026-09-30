@@ -144,7 +144,7 @@ Commands:
   export-patch Export translated workspace to ultra-compact distribution patch (.patch.json.gz)
   import-patch Re-hydrate/merge distribution patch into workspace and TM cache (0 API cost)
   apply-patch  Directly install distribution patch onto a game folder without workspace
-  update       Check and update Lingo CLI to the latest release
+  update       Check and update Lingo CLI ('lingo update app') or central knowledge lexicons ('lingo update lexicon')
   mcp          Start the Model Context Protocol (MCP) server over stdio
   version      Show version info
 
@@ -1118,23 +1118,93 @@ func handleApplyPatch(args []string) {
 }
 
 func handleStyles(args []string) {
+	if len(args) > 0 && (args[0] == "init" || args[0] == "setup") {
+		paths, err := prompts.EnsureAllDefaultLexicons()
+		if err != nil {
+			fmt.Printf("❌ Failed to initialize lexicon files: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("✅ Starter NSFW erotic lexicon files created in user config directory:")
+		for _, p := range paths {
+			fmt.Printf("   • %s\n", p)
+		}
+		fmt.Println("   You can freely edit and add new custom words to these files.")
+		return
+	}
+
 	fmt.Println("🎨 Available Translation Styles & Persona Templates:")
 	fmt.Println("--------------------------------------------------------------------------------")
 	for _, s := range prompts.AvailableStyles() {
 		fmt.Printf("  • %-16s %s\n    %s\n\n", s.ID, s.Name, s.Description)
 	}
 	fmt.Println("--------------------------------------------------------------------------------")
-	fmt.Println("📁 Custom Template Files:")
-	fmt.Println("   Place custom templates in './templates/<name>.txt' or pass a path:")
+	fmt.Println("📁 Custom Template Files & NSFW Lexicons:")
+	fmt.Println("   • Custom prompt templates: './templates/<name>.txt' or '~/.lingo/templates/<name>.txt'")
+	fmt.Println("   • Custom NSFW erotic lexicon: '~/.lingo/nsfw_lexicon.json' (or nsfw_lexicon_<lang>.json)")
+	fmt.Println("   • Run 'lingo styles init' to generate starter lexicon files on your machine.")
 	fmt.Println("   Example: lingo translate -workspace game.nst -provider maxplus -style nsfw")
 }
 
 func handleUpdate(args []string) {
+	target := "app"
+	var remainingArgs []string
+
+	if len(args) > 0 {
+		switch strings.ToLower(args[0]) {
+		case "app", "bin", "binary":
+			target = "app"
+			remainingArgs = args[1:]
+		case "lexicon", "terms", "dict", "dictionary", "data":
+			target = "lexicon"
+			remainingArgs = args[1:]
+		case "all":
+			target = "all"
+			remainingArgs = args[1:]
+		default:
+			remainingArgs = args
+		}
+	}
+
 	fs := flag.NewFlagSet("update", flag.ExitOnError)
 	checkOnly := fs.Bool("check", false, "Only check if an update is available without installing")
 	force := fs.Bool("force", false, "Force re-download even if already up to date")
-	_ = fs.Parse(args)
+	updateLex := fs.Bool("lexicon", false, "Update central knowledge base and erotic lexicons")
+	updateApp := fs.Bool("app", false, "Update the Lingo executable binary")
+	_ = fs.Parse(remainingArgs)
 
+	if *updateLex && !*updateApp {
+		target = "lexicon"
+	} else if *updateApp && !*updateLex {
+		target = "app"
+	} else if *updateApp && *updateLex {
+		target = "all"
+	}
+
+	// 1. Central knowledge base & lexicon update
+	if target == "lexicon" || target == "all" {
+		fmt.Println("📚 Updating central erotic lexicon & knowledge base...")
+		results, err := updater.UpdateLexicons()
+		if err != nil {
+			fmt.Printf("⚠️ Lexicon update error: %v\n", err)
+		} else {
+			for _, r := range results {
+				if r.Error != nil {
+					fmt.Printf("   ⚠️ [%s] %s: %v\n", r.Language, filepath.Base(r.FilePath), r.Error)
+				} else if r.Created {
+					fmt.Printf("   ✨ [%s] Created %s (%d terms from central knowledge base)\n", r.Language, r.FilePath, r.TotalTerms)
+				} else {
+					fmt.Printf("   ✅ [%s] %s: merged %d new terms (total: %d terms, user edits preserved)\n", r.Language, filepath.Base(r.FilePath), r.NewTerms, r.TotalTerms)
+				}
+			}
+			fmt.Println("🎉 Central knowledge base update complete!")
+		}
+		if target == "lexicon" {
+			return
+		}
+		fmt.Println("--------------------------------------------------------------------------------")
+	}
+
+	// 2. Application binary update
 	if *checkOnly {
 		fmt.Println("🔍 Checking for updates...")
 		hasUpdate, currentVer, latestVer, err := updater.CheckUpdate()
@@ -1144,7 +1214,7 @@ func handleUpdate(args []string) {
 		}
 		if hasUpdate {
 			fmt.Printf("📦 An update is available: v%s (current: v%s)\n", latestVer, currentVer)
-			fmt.Println("   Run 'lingo update' to upgrade.")
+			fmt.Println("   Run 'lingo update app' to upgrade.")
 		} else {
 			fmt.Printf("✅ Lingo CLI is up to date (v%s)\n", currentVer)
 		}
@@ -1152,7 +1222,7 @@ func handleUpdate(args []string) {
 	}
 
 	if err := updater.Update(*force); err != nil {
-		fmt.Printf("❌ Update failed: %v\n", err)
+		fmt.Printf("❌ Application update failed: %v\n", err)
 		os.Exit(1)
 	}
 }

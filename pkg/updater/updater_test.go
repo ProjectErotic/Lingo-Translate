@@ -2,6 +2,8 @@ package updater
 
 import (
 	"testing"
+
+	"lingo-translate/pkg/translator/prompts"
 )
 
 func TestIsNewer(t *testing.T) {
@@ -49,5 +51,50 @@ func TestFindMatchingAsset(t *testing.T) {
 	assetUnknown := findMatchingAsset(assets, "solaris", "sparc")
 	if assetUnknown != nil {
 		t.Errorf("expected nil for unsupported platform, got %v", assetUnknown)
+	}
+}
+
+func TestMergeLexicons(t *testing.T) {
+	local := &prompts.NSFWLexicon{
+		Sensations: []string{"เสียว", "คำเฉพาะของผู้ใช้"},
+		Anatomy: prompts.AnatomyTerms{
+			Male: []string{"ดุ้น"},
+		},
+		Custom: []string{"คำพิเศษ"},
+	}
+
+	remote := &prompts.NSFWLexicon{
+		Sensations: []string{"เสียว", "ฟินจนตาค้าง"},
+		Anatomy: prompts.AnatomyTerms{
+			Male:   []string{"แท่งร้อน", "ดุ้น"},
+			Female: []string{"ร่องสวาท"},
+		},
+	}
+
+	merged := mergeLexicons(local, remote)
+
+	// Local user edits should be preserved
+	if len(merged.Sensations) != 3 {
+		t.Errorf("expected 3 sensations, got %d", len(merged.Sensations))
+	}
+	if merged.Sensations[0] != "เสียว" || merged.Sensations[1] != "คำเฉพาะของผู้ใช้" || merged.Sensations[2] != "ฟินจนตาค้าง" {
+		t.Errorf("unexpected sensations order/content: %v", merged.Sensations)
+	}
+
+	// Anatomy should merge both
+	if len(merged.Anatomy.Male) != 2 {
+		t.Errorf("expected 2 male terms, got %d", len(merged.Anatomy.Male))
+	}
+	if len(merged.Anatomy.Female) != 1 {
+		t.Errorf("expected 1 female term, got %d", len(merged.Anatomy.Female))
+	}
+
+	// Custom array from local must be kept
+	if len(merged.Custom) != 1 || merged.Custom[0] != "คำพิเศษ" {
+		t.Errorf("expected local custom terms to be preserved, got %v", merged.Custom)
+	}
+
+	if countTerms(merged) != 7 {
+		t.Errorf("expected 7 total terms, got %d", countTerms(merged))
 	}
 }

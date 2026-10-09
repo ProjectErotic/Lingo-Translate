@@ -63,7 +63,7 @@ export const Menubar: React.FC<MenubarProps> = ({
     <div className="h-8 bg-popover border-b border-border flex items-center px-2 text-xs select-none gap-0.5 z-40">
       {/* Brand logo / tag */}
       <div className="flex items-center gap-1.5 px-2 mr-1 text-primary font-bold tracking-wide">
-        <span className="w-2 h-2 rounded-full bg-primary" />
+        <img src="/icon.png" alt="Lingo" className="w-3.5 h-3.5 rounded-sm object-contain" />
         Lingo
       </div>
 

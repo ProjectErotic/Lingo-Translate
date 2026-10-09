@@ -5,6 +5,6 @@ Exec=lingo-desktop
 Icon=lingo-desktop
 Categories=Development;
 Terminal=false
-Keywords=wails
+Keywords=translation;game;localization;lingo;
 Version=1.0
 StartupNotify=false

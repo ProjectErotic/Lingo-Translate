@@ -34,9 +34,11 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
 
         <div className="space-y-4 py-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-3 border-b border-border pb-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center font-bold text-sm text-primary-foreground shadow-md">
-              Lingo
-            </div>
+            <img
+              src="/icon.png"
+              alt="Lingo"
+              className="w-10 h-10 rounded-lg shadow-md object-contain"
+            />
             <div>
               <h2 className="font-bold text-sm text-foreground">
                 Lingo-Translate (Game Translation Suite)

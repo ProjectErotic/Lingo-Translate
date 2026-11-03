@@ -202,8 +202,8 @@ def main() -> int:
                         changed += 1
         else:
             for k, v in data.items():
-                if isinstance(v, str) and v in mapping and v != mapping[v]:
-                    data[k] = mapping[v]
+                if isinstance(v, str) and k in mapping and v != mapping[k]:
+                    data[k] = mapping[k]
                     changed += 1
         if changed:
             json.dump(data, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)

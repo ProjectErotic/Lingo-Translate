@@ -135,6 +135,9 @@ func (p *Pipeline) Run(ctx context.Context, entries []model.TextEntry, opts tran
 				entries[i].Status = model.StatusTranslated
 				entries[i].Translator = "tm_cache"
 				entries[i].UpdatedAt = time.Now()
+				if p.store != nil {
+					_ = p.store.UpdateEntryTarget(entries[i].ID, cached, model.StatusTranslated, "tm_cache")
+				}
 				atomic.AddInt64(&completedCount, 1)
 				continue
 			}

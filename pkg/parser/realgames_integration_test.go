@@ -167,3 +167,19 @@ func copyDir(src, dst string) error {
 		return os.WriteFile(target, data, 0644)
 	})
 }
+
+func TestReal_UnityJSONSkipsEnginePropKeys(t *testing.T) {
+	// Real regression from Bunny Quota Struggles: Addressables settings.json listed
+	// m_buildTarget="StandaloneWindows64" as a translatable entry — engine property
+	// keys (m_*) must never reach the workspace.
+	p, _ := parser.GetParser("unity")
+	entries, _, err := p.Extract(context.Background(), fixture(t, "unity"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if e.Source == "StandaloneWindows64" || strings.HasPrefix(e.KeyPath, "m_") {
+			t.Errorf("engine prop leaked: key=%q source=%q", e.KeyPath, e.Source)
+		}
+	}
+}

@@ -216,6 +216,9 @@ func (p *Parser) extractJSON(path, relPath string, entries *[]model.TextEntry, u
 		var walkMap func(prefix string, m map[string]interface{})
 		walkMap = func(prefix string, m map[string]interface{}) {
 			for k, v := range m {
+				if propPathRegex.MatchString(k) {
+					continue // engine property keys (m_*), their values are identifiers not dialogue
+				}
 				currKey := k
 				if prefix != "" {
 					currKey = prefix + "." + k

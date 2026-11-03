@@ -657,13 +657,14 @@ func (p *Parser) renderTranslatedFile(jarPath, filePath string, entries []model.
 		if r, err := zip.OpenReader(jarPath); err == nil {
 			defer r.Close()
 			for _, f := range r.File {
-				if f.Name == filePath {
-					if rc, err := f.Open(); err == nil {
-						origData, _ = io.ReadAll(rc)
-						rc.Close()
-					}
-					break
+				if f.Name != filePath {
+					continue
 				}
+				if rc, err := f.Open(); err == nil {
+					origData, _ = io.ReadAll(rc)
+					rc.Close()
+				}
+				break
 			}
 		}
 	}
@@ -864,13 +865,43 @@ func (p *Parser) patchGameJar(sourceDir, outputDir, srcJarPath string, entriesBy
 			if err != nil {
 				return err
 			}
-			_, err = io.Copy(w, rc)
+			raw, rerr := io.ReadAll(rc)
 			rc.Close()
-			if err != nil {
+			if rerr != nil {
+				// Fresh handle: observed spurious zip checksum errors when the same
+				// JAR was read earlier in the process (real ToA jar repro); data is
+				// intact, so retry the entry through a new OpenReader before failing.
+				raw, rerr = readZipEntryFresh(srcJarPath, f.Name)
+				if rerr != nil {
+					return rerr
+				}
+			}
+			if _, err := w.Write(raw); err != nil {
 				return err
 			}
 		}
 	}
 
 	return nil
+}
+
+// readZipEntryFresh reads one entry through a brand-new zip handle.
+func readZipEntryFresh(jarPath, name string) ([]byte, error) {
+	r, err := zip.OpenReader(jarPath)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+	for _, f := range r.File {
+		if f.Name != name {
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			return nil, err
+		}
+		defer rc.Close()
+		return io.ReadAll(rc)
+	}
+	return nil, fmt.Errorf("entry %s not found in %s", name, jarPath)
 }

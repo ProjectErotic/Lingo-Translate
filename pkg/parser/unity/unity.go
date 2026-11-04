@@ -146,6 +146,14 @@ func (p *Parser) Extract(ctx context.Context, dir string) ([]model.TextEntry, *m
 				filesScanned++
 				p.extractXUnityText(path, relPath, &entries, uniqueSet)
 			}
+		default:
+			// Serialized build files (resources.assets, sharedassets*, level*,
+			// globalgamemanagers) carry MonoBehaviour strings as length-prefixed
+			// UTF-8 — scan them so real shipped games yield entries.
+			if isSerializedAssetFile(path) {
+				filesScanned++
+				p.extractSerialized(ctx, path, relPath, &entries, uniqueSet, &filesScanned)
+			}
 		}
 
 		return nil

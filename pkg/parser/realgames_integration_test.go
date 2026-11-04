@@ -105,10 +105,11 @@ func TestReal_Renpy_TheBloodDiary(t *testing.T) {
 func TestReal_Unity_BunnyQuotaStruggles(t *testing.T) {
 	dir := fixture(t, "unity")
 	mustDetect(t, "unity", dir)
-	// Real shipped builds keep text in serialized assets; the parser's plaintext
-	// surface (StreamingAssets json/csv, XUnity Translation) legitimately finds
-	// nothing here. Detect must still classify the game correctly, and Extract
-	// must not error on a real build tree.
+	// The fixture carries only build markers (no serialized data files), so
+	// extract finds nothing here — but it must not error on a real build tree.
+	// The full serialized-string scan is covered by serialized_test.go and was
+	// verified against the real Bunny Quota Struggles build (16.6k entries,
+	// 13k+ with Japanese story text).
 	p, _ := parser.GetParser("unity")
 	if _, _, err := p.Extract(context.Background(), dir); err != nil {
 		t.Fatalf("extract on real build should not error, got: %v", err)

@@ -12,6 +12,10 @@ import (
 )
 
 func TestAppWorkflow(t *testing.T) {
+	// CreateFromGame registers the workspace in ~/.config/lingo/projects.json;
+	// redirect XDG_CONFIG_HOME so tests never touch the user's real registry.
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
 	tempDir := t.TempDir()
 	wsPath := filepath.Join(tempDir, "test_ws.nst")
 	gameDir, err := filepath.Abs("../../test_game")

@@ -118,11 +118,21 @@ func TestReal_Unity_BunnyQuotaStruggles(t *testing.T) {
 func TestReal_Godot_PvZSexLawn(t *testing.T) {
 	dir := fixture(t, "godot")
 	mustDetect(t, "godot", dir)
-	// Scripts live inside the binary .pck; plaintext extract is legitimately empty.
-	// Detect off the real .pck surface is the contract under test.
+	// The fixture pack carries compiled .gdc scripts with string constants —
+	// the pck pipeline (ReadPck/DecodeGDC) must surface them as entries.
 	p, _ := parser.GetParser("godot")
-	if _, _, err := p.Extract(context.Background(), dir); err != nil {
+	entries, _, err := p.Extract(context.Background(), dir)
+	if err != nil {
 		t.Fatalf("extract on real build should not error, got: %v", err)
+	}
+	found := map[string]bool{}
+	for _, e := range entries {
+		found[e.Source] = true
+	}
+	for _, want := range []string{"¡Ola iniciada!", "Velocidad de Juego", "Pausa", "Cambiar Escenario"} {
+		if !found[want] {
+			t.Errorf("expected string constant %q not extracted (got %d entries)", want, len(entries))
+		}
 	}
 }
 

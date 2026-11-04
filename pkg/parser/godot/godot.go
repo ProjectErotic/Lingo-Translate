@@ -100,6 +100,17 @@ func (p *Parser) Extract(ctx context.Context, dir string) ([]model.TextEntry, *m
 		return nil, nil, err
 	}
 
+	// Exported games ship their content inside a .pck pack; extract from it
+	// (compiled scripts + binary resources) and merge with loose-file results.
+	if pckPath := PckForGame(dir); pckPath != "" {
+		pckEntries, pckStats, err := p.extractPck(ctx, pckPath)
+		if err != nil {
+			return nil, nil, fmt.Errorf("pck extract: %w", err)
+		}
+		entries = append(entries, pckEntries...)
+		filesScanned += pckStats.FilesScanned
+	}
+
 	totalWords := 0
 	for _, e := range entries {
 		uniqueSet[e.Source] = true
@@ -239,8 +250,13 @@ func isSystemCode(s string) bool {
 	return false
 }
 
-// Inject writes Godot localization translations into a CSV file
+// Inject writes Godot localization translations into a CSV file.
+// When the game ships a .pck pack, a patched copy of the pack with translated
+// .gdc string constants and scene strings is written to the output dir instead.
 func (p *Parser) Inject(ctx context.Context, sourceDir, outputDir string, entries []model.TextEntry) error {
+	if pckPath := PckForGame(sourceDir); pckPath != "" {
+		return p.injectPck(ctx, sourceDir, outputDir, pckPath, entries)
+	}
 	targetBase := sourceDir
 	if outputDir != "" && outputDir != sourceDir {
 		targetBase = outputDir

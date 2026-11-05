@@ -13,6 +13,7 @@ import (
 	"lingo-translate/pkg/decision/jev"
 	renpyInj "lingo-translate/pkg/injection/renpy"
 	rpgmInj "lingo-translate/pkg/injection/rpgm"
+	xunityInj "lingo-translate/pkg/injection/xunity"
 	"lingo-translate/pkg/merger"
 	"lingo-translate/pkg/model"
 	"lingo-translate/pkg/parser"
@@ -546,6 +547,10 @@ func (w *Workspace) DeployLayer(gamePath, langName string) error {
 		return exporter.Deploy(targetGamePath, entries, rpgmInj.DeployOptions{
 			LanguageName:   langName,
 			OnlyTranslated: true,
+		})
+	case "unity":
+		return xunityInj.Deploy(targetGamePath, entries, xunityInj.DeployOptions{
+			LanguageName: langName,
 		})
 	default:
 		// Attempt auto-detection if engine string wasn't explicitly set

@@ -201,11 +201,17 @@ func (p *Parser) Inject(ctx context.Context, sourceDir, outputDir string, entrie
 		return fmt.Errorf("failed to parse source JSON: %w", err)
 	}
 
-	// Index translated entries by ID
+	// Index translated entries by ID. Workspace rows use the bare key
+	// ("lang_x", "lang_y[0]"), while distribution patches carry
+	// "file:key" ("lang/eng.json:lang_x") — accept both so patches
+	// inject identically to workspace-driven runs.
 	translations := make(map[string]string)
 	for _, entry := range entries {
 		if entry.Target != "" {
 			translations[entry.ID] = entry.Target
+			if entry.KeyPath != "" && entry.ID != entry.KeyPath {
+				translations[entry.KeyPath] = entry.Target
+			}
 		}
 	}
 

@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"lingo-translate/pkg/fragment"
+	"lingo-translate/pkg/glossary"
 	"lingo-translate/pkg/translator"
 	"lingo-translate/pkg/translator/prompts"
 )
@@ -106,12 +108,47 @@ func (c *Client) Translate(ctx context.Context, texts []string, opts translator.
 	}
 
 	systemPrompt := prompts.ResolvePrompt(opts.Style, opts.SourceLang, opts.TargetLang, opts.Prompt)
+
+	// 1. Dynamic In-Flight Glossary Injection (LinguaGacha standard)
+	if len(opts.Glossary) > 0 {
+		glossaryEntries := make([]glossary.Entry, 0, len(opts.Glossary))
+		for k, v := range opts.Glossary {
+			glossaryEntries = append(glossaryEntries, glossary.Entry{
+				Source: k,
+				Target: v,
+			})
+		}
+		matcher := glossary.NewMatcher(glossaryEntries)
+		matched := matcher.MatchBatch(texts)
+		if len(matched) > 0 {
+			systemPrompt += "\n\n" + glossary.FormatPrompt(matched)
+		}
+	}
+
+	// 2. Dynamic Sentence Fragment Directive (Detects "horny by ", "level: ", etc.)
+	if fragment.HasAnyFragment(texts) {
+		systemPrompt += "\n\n" + fragment.BuildPromptDirective(opts.TargetLang)
+	}
+
 	systemPrompt += "\n\nCRITICAL FORMAT RULE:\nOutput ONLY a valid JSON array of strings corresponding 1-to-1 with the input lines, e.g. [\"line 1\", \"line 2\"]. No markdown, no explanations."
 
 	inputJSON, err := json.Marshal(texts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode input texts: %w", err)
 	}
+
+	// 2. Rolling Context Construction (LinguaGacha / GalTransl standard)
+	var userContentBuilder strings.Builder
+	if len(opts.Context) > 0 {
+		userContentBuilder.WriteString("Preceding context (for reference only, DO NOT translate):\n")
+		for _, ctxLine := range opts.Context {
+			userContentBuilder.WriteString("> ")
+			userContentBuilder.WriteString(ctxLine)
+			userContentBuilder.WriteString("\n")
+		}
+		userContentBuilder.WriteString("\nInput (translate each entry to " + opts.TargetLang + "):\n")
+	}
+	userContentBuilder.WriteString(string(inputJSON))
 
 	modelName := c.cfg.Model
 	if opts.Model != "" {
@@ -122,7 +159,7 @@ func (c *Client) Translate(ctx context.Context, texts []string, opts translator.
 		Model: modelName,
 		Messages: []chatMessage{
 			{Role: "system", Content: systemPrompt},
-			{Role: "user", Content: string(inputJSON)},
+			{Role: "user", Content: userContentBuilder.String()},
 		},
 		Temperature: 0.3,
 	}
@@ -188,9 +225,10 @@ func (c *Client) Translate(ctx context.Context, texts []string, opts translator.
 
 	results := make([]translator.Result, len(texts))
 	for i := range texts {
+		finalTarget := fragment.EnforceTrailingSpace(texts[i], translatedTexts[i])
 		results[i] = translator.Result{
 			Source:     texts[i],
-			Target:     translatedTexts[i],
+			Target:     finalTarget,
 			Translator: "openai:" + modelName,
 		}
 	}

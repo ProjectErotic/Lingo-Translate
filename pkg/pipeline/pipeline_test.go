@@ -265,3 +265,73 @@ func TestPipelineMemoryCacheToggle(t *testing.T) {
 		t.Errorf("Expected fresh translation when cache disabled, got: %s", res2[0].Target)
 	}
 }
+
+type contextSpyTranslator struct {
+	receivedContexts [][]string
+}
+
+func (s *contextSpyTranslator) Name() string { return "context_spy" }
+func (s *contextSpyTranslator) Translate(ctx context.Context, texts []string, opts translator.Options) ([]translator.Result, error) {
+	s.receivedContexts = append(s.receivedContexts, opts.Context)
+	results := make([]translator.Result, len(texts))
+	for i, txt := range texts {
+		results[i] = translator.Result{Source: txt, Target: "[TH] " + txt, Translator: "spy"}
+	}
+	return results, nil
+}
+
+func TestPipelineRollingContext(t *testing.T) {
+	tempDir := t.TempDir()
+	store, _ := storage.Open(filepath.Join(tempDir, "context_test.nst"))
+	defer store.Close()
+
+	spy := &contextSpyTranslator{}
+	pipe := New(store, spy, Config{
+		BatchSize:   2,
+		Concurrency: 1, // Single worker to preserve batch order
+	})
+	pipe.SetMemoryCache(false)
+
+	entries := []model.TextEntry{
+		{ID: "1", FilePath: "scene1.json", Source: "Hero: What happened?"},
+		{ID: "2", FilePath: "scene1.json", Source: "Villager: Monsters attacked the village."},
+		{ID: "3", FilePath: "scene1.json", Source: "Hero: Where did they go?"},
+		{ID: "4", FilePath: "scene1.json", Source: "Villager: Towards the north mountain."},
+		{ID: "5", FilePath: "scene2.json", Source: "King: Welcome to the throne room."},
+	}
+
+	opts := translator.Options{SourceLang: "en", TargetLang: "th"}
+	_, err := pipe.Run(context.Background(), entries, opts, nil)
+	if err != nil {
+		t.Fatalf("pipeline run failed: %v", err)
+	}
+
+	// Batches:
+	// Batch 0 (entries 0, 1): scene1.json -> Context: []
+	// Batch 1 (entries 2, 3): scene1.json -> Context: [Hero: What happened?, Villager: Monsters attacked the village.]
+	// Batch 2 (entry 4): scene2.json -> Context: [] (file changed!)
+
+	if len(spy.receivedContexts) < 3 {
+		t.Fatalf("expected at least 3 batches, got %d", len(spy.receivedContexts))
+	}
+
+	// Verify Batch 0 context is empty
+	if len(spy.receivedContexts[0]) != 0 {
+		t.Errorf("expected batch 0 context to be empty, got: %v", spy.receivedContexts[0])
+	}
+
+	// Verify Batch 1 context has preceding lines from scene1.json
+	ctx1 := spy.receivedContexts[1]
+	if len(ctx1) != 2 {
+		t.Fatalf("expected batch 1 context to have 2 lines, got %d (%v)", len(ctx1), ctx1)
+	}
+	if ctx1[0] != "Hero: What happened?" || ctx1[1] != "Villager: Monsters attacked the village." {
+		t.Errorf("unexpected batch 1 context lines: %v", ctx1)
+	}
+
+	// Verify Batch 2 context is empty because file switched to scene2.json
+	ctx2 := spy.receivedContexts[2]
+	if len(ctx2) != 0 {
+		t.Errorf("expected batch 2 context to be empty (new file), got: %v", ctx2)
+	}
+}

@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,6 +20,7 @@ type Config struct {
 	Concurrency int
 	Retries     int
 	RetryDelay  time.Duration
+	Force       bool
 }
 
 type Pipeline struct {
@@ -79,6 +81,11 @@ func (p *Pipeline) SetMemoryCache(enabled bool) {
 	p.enableMemoryCache = enabled
 }
 
+// SetForce enables or disables forced re-translation
+func (p *Pipeline) SetForce(force bool) {
+	p.cfg.Force = force
+}
+
 // SetSystemOne configures the auxiliary System One decision engine (TypeSafe AI Jev)
 func (p *Pipeline) SetSystemOne(engine decision.DecisionEngine, acceptUIDrafts, verifyQA bool) {
 	p.decisionEngine = engine
@@ -123,12 +130,12 @@ func (p *Pipeline) Run(ctx context.Context, entries []model.TextEntry, opts tran
 	// 1. First pass: check Translation Memory cache
 	var toTranslateIndices []int
 	for i := range entries {
-		if entries[i].Target != "" && entries[i].Status != model.StatusUntranslated {
+		if !p.cfg.Force && entries[i].Target != "" && entries[i].Status != model.StatusUntranslated {
 			atomic.AddInt64(&completedCount, 1)
 			continue
 		}
 
-		if p.enableMemoryCache && p.store != nil {
+		if !p.cfg.Force && p.enableMemoryCache && p.store != nil {
 			cached, hit, err := p.store.GetCache(entries[i].Source, opts.SourceLang, opts.TargetLang)
 			if err == nil && hit && cached != "" {
 				entries[i].Target = cached
@@ -258,11 +265,31 @@ func (p *Pipeline) Run(ctx context.Context, entries []model.TextEntry, opts tran
 					maskedTexts[idx] = maskResults[idx].MaskedText
 				}
 
+				// Extract Rolling Context from preceding entries in the same file (LinguaGacha / GalTransl standard)
+				batchOpts := opts
+				if len(batch) > 0 {
+					firstEntryIdx := batch[0]
+					targetFile := entries[firstEntryIdx].FilePath
+					var contextLines []string
+					lookbackLimit := 4
+					for prevIdx := firstEntryIdx - 1; prevIdx >= 0 && len(contextLines) < lookbackLimit; prevIdx-- {
+						if entries[prevIdx].FilePath == targetFile {
+							srcText := strings.TrimSpace(entries[prevIdx].Source)
+							if srcText != "" {
+								contextLines = append([]string{srcText}, contextLines...)
+							}
+						} else {
+							break
+						}
+					}
+					batchOpts.Context = contextLines
+				}
+
 				// Translate with retry
 				var transResults []translator.Result
 				var err error
 				for attempt := 0; attempt <= p.cfg.Retries; attempt++ {
-					transResults, err = p.translator.Translate(ctx, maskedTexts, opts)
+					transResults, err = p.translator.Translate(ctx, maskedTexts, batchOpts)
 					if err == nil {
 						break
 					}
@@ -272,7 +299,7 @@ func (p *Pipeline) Run(ctx context.Context, entries []model.TextEntry, opts tran
 				// If primary failed and a fallback translator is configured, attempt fallback translation
 				if err != nil && p.fallbackTranslator != nil {
 					for fbAttempt := 0; fbAttempt <= p.cfg.Retries; fbAttempt++ {
-						fbResults, fbErr := p.fallbackTranslator.Translate(ctx, maskedTexts, opts)
+						fbResults, fbErr := p.fallbackTranslator.Translate(ctx, maskedTexts, batchOpts)
 						if fbErr == nil {
 							transResults = fbResults
 							err = nil

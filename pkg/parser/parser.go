@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"lingo-translate/pkg/model"
+	"lingo-translate/pkg/parser/generic"
 	"lingo-translate/pkg/parser/godot"
 	"lingo-translate/pkg/parser/libgdx"
 	"lingo-translate/pkg/parser/renpy"
@@ -36,6 +37,7 @@ func Registry() []EngineParser {
 		godot.New(),
 		unity.New(),
 		libgdx.New(),
+		generic.New(),
 	}
 }
 

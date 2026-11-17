@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"lingo-translate/pkg/app"
+	"lingo-translate/pkg/engine"
 	"lingo-translate/pkg/mcp"
 	"lingo-translate/pkg/model"
 	"lingo-translate/pkg/plugins/chanomhub"
@@ -69,6 +70,8 @@ func main() {
 		handleWeb(os.Args[2:])
 	case "extract":
 		handleExtract(os.Args[2:])
+	case "inspect", "xray":
+		handleInspect(os.Args[2:])
 	case "translate":
 		handleTranslate(os.Args[2:])
 	case "inject":
@@ -244,6 +247,8 @@ func handleTranslate(args []string) {
 	jevKey := fs.String("jev-key", jevKeyEnv, "TypeSafe AI Jev API key")
 	jevBaseURL := fs.String("jev-base-url", "", "TypeSafe AI Jev API base URL")
 	jevThreshold := fs.Float64("jev-threshold", 0.85, "System One decision confidence threshold (default 0.85)")
+	force := fs.Bool("force", false, "Force re-translation of existing entries")
+	enableEngineXRay := fs.Bool("engine-aware", true, "Enable game engine X-Ray inspection for dynamic context")
 	fs.Parse(args)
 
 	if *megaBatch {
@@ -288,6 +293,8 @@ func handleTranslate(args []string) {
 		Scope:       "all",
 		Stream:      *streamMode,
 		Format:      *formatMode,
+		Force:       *force,
+		EnableEngineXRay: *enableEngineXRay,
 	}
 
 	if *fastProviderName != "" {
@@ -1225,4 +1232,89 @@ func handleUpdate(args []string) {
 		fmt.Printf("❌ Application update failed: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func handleInspect(args []string) {
+	fs := flag.NewFlagSet("inspect", flag.ExitOnError)
+	targetKey := fs.String("key", "", "Specific string key to analyze across game engine")
+	simText := fs.String("sim", "", "Simulated Thai translation to test in-game render")
+	fs.Parse(args)
+
+	gameDir := "."
+	if fs.NArg() > 0 {
+		gameDir = fs.Arg(0)
+	}
+
+	absDir, err := filepath.Abs(gameDir)
+	if err != nil {
+		absDir = gameDir
+	}
+
+	fmt.Printf("🔍 [Engine X-Ray Beta] Inspecting game engine in: %s\n", absDir)
+
+	gmInspector, err := engine.NewGameMakerInspector(absDir)
+	if err != nil {
+		fmt.Printf("❌ Unsupported or non-GameMaker engine: %v\n", err)
+		return
+	}
+
+	var sampleKeys []string
+	if *targetKey != "" {
+		sampleKeys = append(sampleKeys, *targetKey)
+	} else {
+		sampleKeys = []string{
+			"lang_dialogue_battle_chara_act_check_0_0",
+			"tl_dialogue_chara_talk_{0}",
+		}
+	}
+
+	report, err := gmInspector.GenerateFullReport(sampleKeys)
+	if err != nil {
+		fmt.Printf("❌ Inspection failed: %v\n", err)
+		return
+	}
+
+	fmt.Println("================================================================================")
+	fmt.Printf("🎮 Engine Detected : %s\n", report.EngineType)
+	fmt.Printf("⚡ Compilation Mode: %s\n", func() string {
+		if report.IsYYC {
+			return "YYC (Native C++ YoYo Compiler)"
+		}
+		return "VM (Standard Bytecode)"
+	}())
+	fmt.Printf("📦 Total Strings   : %d (in data.win)\n", report.TotalStrings)
+	if report.TotalScripts > 0 {
+		fmt.Printf("📜 Total Scripts   : %d (in native binary)\n", report.TotalScripts)
+	}
+	fmt.Println("--------------------------------------------------------------------------------")
+
+	for k, ctx := range report.KeyAnalyses {
+		fmt.Printf("🔑 Key: %s\n", k)
+		fmt.Printf("   ├─ Trailing Space Needed: %v\n", ctx.TrailingSpaceNeeded)
+		if ctx.DynamicSuffix != "" {
+			fmt.Printf("   ├─ Dynamic Suffix       : %q\n", ctx.DynamicSuffix)
+		}
+		if len(ctx.Callers) > 0 {
+			fmt.Printf("   ├─ Callers Detected (%d):\n", len(ctx.Callers))
+			limit := len(ctx.Callers)
+			if limit > 5 {
+				limit = 5
+			}
+			for _, c := range ctx.Callers[:limit] {
+				fmt.Printf("   │   • %s\n", c)
+			}
+			if len(ctx.Callers) > 5 {
+				fmt.Printf("   │   ... and %d more callers\n", len(ctx.Callers)-5)
+			}
+		}
+
+		testTranslation := "ระดับความเงี่ยนของเธออยู่ที่ "
+		if *simText != "" {
+			testTranslation = *simText
+		}
+		simOutput := engine.SimulateInGameRender(ctx, testTranslation)
+		fmt.Printf("   └─ Simulated In-Game Render : %q\n", simOutput)
+		fmt.Println()
+	}
+	fmt.Println("================================================================================")
 }

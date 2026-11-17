@@ -69,6 +69,9 @@ type TranslateOptions struct {
 	Format            string            `json:"format,omitempty"` // "json" (default) or "line"
 	Style             string            `json:"style,omitempty"`  // e.g. "standard", "nsfw", "vn_romance", "fantasy_rpg", etc.
 	Prompt            string            `json:"prompt,omitempty"` // Custom system prompt instruction
+	Force             bool              `json:"force,omitempty"`  // Force re-translate even if already translated
+	Glossary          map[string]string `json:"glossary,omitempty"`
+	EnableEngineXRay  bool              `json:"enable_engine_xray,omitempty"`
 }
 
 // PublishOptions configures translation mod publishing to Chanomhub
@@ -474,6 +477,11 @@ func (w *Workspace) Translate(ctx context.Context, opts TranslateOptions, progre
 		}
 	}
 
+	// Configure Force re-translation
+	if opts.Force {
+		pipe.SetForce(true)
+	}
+
 	srcLang := opts.SourceLang
 	if srcLang == "" && proj != nil {
 		srcLang = proj.SourceLang
@@ -481,6 +489,26 @@ func (w *Workspace) Translate(ctx context.Context, opts TranslateOptions, progre
 	tgtLang := opts.TargetLang
 	if tgtLang == "" && proj != nil {
 		tgtLang = proj.TargetLang
+	}
+
+	glossary := make(map[string]string)
+	for k, v := range opts.Glossary {
+		glossary[k] = v
+	}
+	// Default locked character/proper nouns
+	if opts.EnableEngineXRay || len(glossary) == 0 {
+		if _, ok := glossary["Chara"]; !ok {
+			glossary["Chara"] = "Chara"
+		}
+		if _, ok := glossary["Muffet"]; !ok {
+			glossary["Muffet"] = "Muffet"
+		}
+		if _, ok := glossary["Toriel"]; !ok {
+			glossary["Toriel"] = "Toriel"
+		}
+		if _, ok := glossary["Frisk"]; !ok {
+			glossary["Frisk"] = "Frisk"
+		}
 	}
 
 	tOpts := translator.Options{
@@ -491,6 +519,7 @@ func (w *Workspace) Translate(ctx context.Context, opts TranslateOptions, progre
 		Format:     opts.Format,
 		Style:      opts.Style,
 		Prompt:     opts.Prompt,
+		Glossary:   glossary,
 	}
 
 	_, err = pipe.Run(ctx, entries, tOpts, progressCb)

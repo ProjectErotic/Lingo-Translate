@@ -11,9 +11,10 @@ type Options struct {
 	Model      string
 	Glossary   map[string]string
 	Prompt     string
-	Style      string // Translation style/persona: "standard", "nsfw", "vn_romance", etc.
-	Stream     bool   // Enable streaming mode (SSE)
-	Format     string // "json" (default) or "line" ([ID] ||| [Text])
+	Style      string   // Translation style/persona: "standard", "nsfw", "vn_romance", etc.
+	Stream     bool     // Enable streaming mode (SSE)
+	Format     string   // "json" (default) or "line" ([ID] ||| [Text])
+	Context    []string // Rolling Previous Context lines for reference only (LinguaGacha standard)
 }
 
 // Result represents the outcome for a single translated text string
